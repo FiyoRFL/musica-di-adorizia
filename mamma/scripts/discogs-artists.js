@@ -18,7 +18,14 @@ const ARTISTS = [
   'Zucchero', 'Gianna Nannini', 'Marco Masini', 'Nek', 'Biagio Antonacci', 'Tiziano Ferro', 'Giorgia',
   'Alessandra Amoroso', 'Il Volo', 'Laura Pausini'
 ].filter((x, i, a) => a.indexOf(x) === i);
-const KNOWN = { 'Eros Ramazzotti': 201878, 'Laura Pausini': 80894 };
+// IDs de Discogs ya verificados (sirven para armar el catalogo sin claves)
+const KNOWN = {
+  'Eros Ramazzotti': 201878, 'Laura Pausini': 80894, 'Andrea Bocelli': 318300, 'Tiziano Ferro': 286825,
+  'Zucchero': 176435, 'Il Volo': 2086557, 'Nek': 168621, 'Gianna Nannini': 175006, 'Adriano Celentano': 36543,
+  'Toto Cutugno': 215246, 'Al Bano & Romina Power': 303666, 'Umberto Tozzi': 176185, 'Raffaella Carrà': 302018,
+  'Ricchi E Poveri': 310136, 'Claudio Baglioni': 638411, 'Riccardo Cocciante': 399868, 'Lucio Dalla': 207470,
+  'Mina': 319972, 'Marco Masini': 268725, 'Pooh': 380875,
+};
 const ALBUMS_WITH_SONGS = 10;   // discos por cantante de donde se sacan canciones
 const SONGS_PER_ALBUM = 4;
 
@@ -57,7 +64,7 @@ async function findId(name) {
 async function albums(id) {
   const out = [];
   const seen = new Set();
-  for (let page = 1; page <= 3; page++) {
+  for (let page = 1; page <= (KEY ? 3 : 2); page++) {
     const d = await get(`https://api.discogs.com/artists/${id}/releases?sort=year&sort_order=desc&per_page=100&page=${page}`);
     for (const r of d.releases || []) {
       if (r.type !== 'master' || r.role !== 'Main' || !r.year) continue;
@@ -121,7 +128,7 @@ async function songsOf(name, list) {
       if (norm(a.name) !== norm(name)) { console.warn('no coincide', name, '->', a.name); continue; }
       const img = (a.images || []).find(x => x.type === 'primary') || (a.images || [])[0];
       const alb = await albums(id);
-      const songs = KEY ? await songsOf(name, alb) : [];
+      const songs = await songsOf(name, alb);
       total += songs.length;
       list.push({ name, id, photo: img ? (img.uri150 || img.uri) : '', albums: alb.map(({ pop, ...x }) => x), songs });
       console.log('ok', name, id, alb.length, 'discos,', songs.length, 'canciones:', songs.slice(0, 3).map(s => s.t).join(' | '));
