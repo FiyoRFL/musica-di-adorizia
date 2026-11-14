@@ -1,0 +1,10 @@
+MUSICA DE MAMA - app Android para escuchar musica italiana
+===========================================================
+- Radio Italia con un toque + radios italianas (Radio Browser, gratis, sin token).
+- Cantantes: Eros Ramazzotti, Laura Pausini, Andrea Bocelli y mas, con sus discos y canciones de Discogs (sin token en el celu).
+- Mis canciones: los MP3 guardados en el celu. Si una cancion de un disco de Discogs esta en el celu, se toca desde el disco.
+- Sigue sonando con la pantalla apagada, con controles en la pantalla de bloqueo. Sin anuncios.
+- Apagado automatico (15 / 30 / 60 min).
+
+COMPILAR: Actions -> "Musica de Mama APK" -> Run workflow. La APK queda en Releases (mamma-v1.0.N).
+mamma.jks es la llave: no la borres (sirve para instalar versiones nuevas encima).

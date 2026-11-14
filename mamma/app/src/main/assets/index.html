@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Música de Mamá</title>
+<style>
+:root{
+  --bg:#FBF6EE; --card:#FFFFFF; --ink:#2A1A14; --soft:#7B6A60; --line:#EADFCF;
+  --rosso:#B3262F; --rosso2:#7A1F2B; --verde:#1F7A4A; --oro:#D9A441;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,"Times New Roman",serif;font-size:20px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+header{position:sticky;top:0;z-index:5;background:var(--rosso2);color:#fff;display:flex;align-items:center;gap:10px;padding:14px 16px;min-height:68px}
+header h1{font-size:24px;margin:0;font-weight:700;flex:1;line-height:1.15}
+header .back{font-size:30px;width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.15);display:none}
+header .back.show{display:block}
+.flag{height:5px;background:linear-gradient(90deg,var(--verde) 33.3%,#fff 33.3% 66.6%,var(--rosso) 66.6%)}
+main{padding:16px 16px 190px}
+.view{display:none}.view.on{display:block}
+.big{display:flex;align-items:center;gap:16px;width:100%;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:22px;padding:20px;margin:0 0 14px;font-size:24px;font-weight:700;box-shadow:0 2px 0 var(--line)}
+.big .ico{font-size:44px;width:64px;text-align:center}
+.big small{display:block;font-size:16px;color:var(--soft);font-weight:400;margin-top:4px}
+.big:active,.row:active,.tile:active{transform:scale(.98);background:#FFF3E3}
+.quick{background:var(--rosso);color:#fff;border-color:var(--rosso2);box-shadow:0 3px 0 var(--rosso2)}
+.quick small{color:#FFE3E3}
+h2{font-size:22px;margin:22px 4px 12px;color:var(--rosso2)}
+.row{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px 14px;margin:0 0 10px;min-height:76px}
+.row img,.row .ph{width:58px;height:58px;border-radius:12px;object-fit:cover;background:#F1E6D6;flex:none;display:flex;align-items:center;justify-content:center;font-size:28px}
+.row .t{flex:1;min-width:0}
+.row .t b{display:block;font-size:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .t span{display:block;font-size:16px;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .go{font-size:26px;color:var(--rosso)}
+.row.now{border-color:var(--rosso);background:#FFF0EE}
+.row.off{opacity:.55}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:10px;text-align:center}
+.tile img,.tile .ph{width:100%;aspect-ratio:1;border-radius:14px;object-fit:cover;background:#F1E6D6;display:flex;align-items:center;justify-content:center;font-size:52px}
+.tile b{display:block;font-size:18px;margin-top:8px;line-height:1.2}
+.tile span{display:block;font-size:15px;color:var(--soft)}
+.hero{display:flex;gap:16px;align-items:center;margin-bottom:14px}
+.hero img,.hero .ph{width:120px;height:120px;border-radius:20px;object-fit:cover;background:#F1E6D6;flex:none;display:flex;align-items:center;justify-content:center;font-size:56px}
+.hero h3{margin:0;font-size:26px}
+.hero p{margin:6px 0 0;color:var(--soft);font-size:17px}
+.btn{display:block;width:100%;background:var(--verde);color:#fff;border-radius:18px;padding:18px;font-size:22px;font-weight:700;margin:0 0 12px;box-shadow:0 3px 0 #145232}
+.btn.red{background:var(--rosso);box-shadow:0 3px 0 var(--rosso2)}
+.btn.gray{background:#E9DFD1;color:var(--ink);box-shadow:0 3px 0 #D3C5B2}
+.note{background:#FFF7E6;border:2px dashed var(--oro);border-radius:16px;padding:14px;font-size:17px;line-height:1.4;color:#5A4630;margin:0 0 14px}
+.search{width:100%;font:inherit;font-size:22px;padding:16px 18px;border-radius:18px;border:2px solid var(--line);background:#fff;margin:0 0 14px;outline:none}
+.search:focus{border-color:var(--rosso)}
+.msg{text-align:center;color:var(--soft);padding:30px 10px;font-size:19px}
+.spin{display:inline-block;width:28px;height:28px;border:4px solid var(--line);border-top-color:var(--rosso);border-radius:50%;animation:s 1s linear infinite;vertical-align:middle}
+@keyframes s{to{transform:rotate(360deg)}}
+
+/* barra de abajo */
+#bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--rosso2);color:#fff;display:none;align-items:center;gap:12px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -4px 16px rgba(0,0,0,.18)}
+#bar.show{display:flex}
+#bar img,#bar .ph{width:60px;height:60px;border-radius:12px;object-fit:cover;background:rgba(255,255,255,.15);flex:none;display:flex;align-items:center;justify-content:center;font-size:30px}
+#bar .t{flex:1;min-width:0}
+#bar .t b{display:block;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bar .t span{display:block;font-size:15px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bar .pp{width:70px;height:70px;border-radius:50%;background:#fff;color:var(--rosso2);font-size:32px;flex:none;display:flex;align-items:center;justify-content:center}
+
+/* reproductor grande */
+#full{position:fixed;inset:0;z-index:20;background:linear-gradient(180deg,var(--rosso2),#3E0F16);color:#fff;display:none;flex-direction:column;align-items:center;padding:20px 22px calc(26px + env(safe-area-inset-bottom));overflow:auto}
+#full.show{display:flex}
+#full .close{align-self:stretch;text-align:center;font-size:20px;padding:10px;background:rgba(255,255,255,.12);border-radius:16px}
+#full .art{width:min(78vw,340px);aspect-ratio:1;border-radius:24px;object-fit:cover;background:rgba(255,255,255,.1);margin:24px 0 18px;display:flex;align-items:center;justify-content:center;font-size:110px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#full h3{font-size:26px;margin:0;text-align:center}
+#full p{font-size:19px;margin:6px 0 0;opacity:.85;text-align:center}
+#full .live{display:inline-block;background:var(--verde);padding:4px 12px;border-radius:999px;font-size:15px;margin-top:10px}
+#full input[type=range]{width:100%;margin:22px 0 4px;accent-color:#fff;height:30px}
+#full .times{display:flex;justify-content:space-between;width:100%;font-size:16px;opacity:.85}
+#full .ctl{display:flex;align-items:center;justify-content:center;gap:22px;margin:18px 0}
+#full .ctl button{width:74px;height:74px;border-radius:50%;background:rgba(255,255,255,.15);font-size:30px}
+#full .ctl .pp{width:104px;height:104px;background:#fff;color:var(--rosso2);font-size:46px}
+#full .ctl button:disabled{opacity:.3}
+#full .sleep{width:100%;margin-top:6px}
+#full .sleep b{display:block;text-align:center;font-size:18px;margin-bottom:10px;font-weight:400;opacity:.9}
+#full .sleep div{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+#full .sleep button{background:rgba(255,255,255,.15);border-radius:14px;padding:14px 0;font-size:18px}
+#full .sleep button.on{background:#fff;color:var(--rosso2);font-weight:700}
+#full .err{background:#fff;color:var(--rosso);padding:10px 14px;border-radius:12px;margin-top:12px;font-size:17px;display:none}
+</style>
+</head>
+<body>
+<header>
+  <button class="back" id="back" onclick="goBack()" aria-label="Volver">‹</button>
+  <h1 id="title">Música de Mamá</h1>
+</header>
+<div class="flag"></div>
+<main>
+  <!-- INICIO -->
+  <section class="view on" id="v-home">
+    <button class="big quick" onclick="playStation(STATIONS[0])"><span class="ico">📻</span><span>Radio Italia<small>Solo música italiana, todo el día</small></span></button>
+    <button class="big" onclick="show('radio')"><span class="ico">🎙️</span><span>Radios italianas<small>Elegí una y escuchá</small></span></button>
+    <button class="big" onclick="show('artists')"><span class="ico">🎤</span><span>Cantantes<small>Eros, Laura, Bocelli y más</small></span></button>
+    <button class="big" onclick="show('mine')"><span class="ico">🎵</span><span>Mis canciones<small>Las que están guardadas en el celu</small></span></button>
+  </section>
+
+  <!-- RADIOS -->
+  <section class="view" id="v-radio">
+    <div id="radio-list"></div>
+    <h2>Más radios de Italia</h2>
+    <div id="radio-more"><div class="msg"><span class="spin"></span></div></div>
+  </section>
+
+  <!-- CANTANTES -->
+  <section class="view" id="v-artists"><div class="grid" id="artist-grid"></div></section>
+
+  <!-- UN CANTANTE -->
+  <section class="view" id="v-artist"></section>
+
+  <!-- UN DISCO -->
+  <section class="view" id="v-album"></section>
+
+  <!-- MIS CANCIONES -->
+  <section class="view" id="v-mine">
+    <input class="search" id="q" placeholder="🔎 Buscar canción o cantante" oninput="renderMine()">
+    <button class="btn" onclick="shuffleMine()">🔀 Escuchar todo mezclado</button>
+    <div id="mine-list"></div>
+  </section>
+</main>
+
+<!-- barra de abajo -->
+<div id="bar" onclick="openFull(event)">
+  <div class="ph" id="bar-art">🎵</div>
+  <div class="t"><b id="bar-title"></b><span id="bar-artist"></span></div>
+  <button class="pp" id="bar-pp" onclick="event.stopPropagation();Android.cmd('toggle')">▶</button>
+</div>
+
+<!-- reproductor grande -->
+<div id="full">
+  <button class="close" onclick="closeFull()">⌄ Cerrar</button>
+  <div class="art" id="f-art">🎵</div>
+  <h3 id="f-title"></h3>
+  <p id="f-artist"></p>
+  <span class="live" id="f-live">● EN VIVO</span>
+  <div style="width:100%" id="f-prog">
+    <input type="range" id="f-range" min="0" max="1000" value="0" onchange="Android.seek(Math.round(this.value/1000*S.dur))">
+    <div class="times"><span id="f-pos">0:00</span><span id="f-dur">0:00</span></div>
+  </div>
+  <div class="ctl">
+    <button id="f-prev" onclick="Android.cmd('prev')" aria-label="Anterior">⏮</button>
+    <button class="pp" id="f-pp" onclick="Android.cmd('toggle')" aria-label="Pausa">▶</button>
+    <button id="f-next" onclick="Android.cmd('next')" aria-label="Siguiente">⏭</button>
+  </div>
+  <div class="err" id="f-err"></div>
+  <div class="sleep">
+    <b id="f-sleep-txt">⏰ Apagar la música en…</b>
+    <div>
+      <button data-m="15" onclick="setSleep(15)">15 min</button>
+      <button data-m="30" onclick="setSleep(30)">30 min</button>
+      <button data-m="60" onclick="setSleep(60)">1 hora</button>
+      <button data-m="0" onclick="setSleep(0)">No</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ---------- radios (se buscan en Radio Browser, gratis y sin anuncios propios) ----------
+const STATIONS = [
+  { name: 'Radio Italia', q: 'Radio Italia', desc: 'Solo música italiana', must: 'radio italia', not: ['anni', 'live', 'trend', 'latino'] },
+  { name: 'Radio Birikina', q: 'Birikina', desc: 'Canciones italianas de siempre' },
+  { name: 'RTL 102.5', q: 'RTL 102.5', desc: 'La radio más escuchada de Italia', must: 'rtl 102', not: ['best', 'napuli', 'doppio', 'guerra'] },
+  { name: 'Radio Subasio', q: 'Radio Subasio', desc: 'Música italiana e internacional', not: ['+', 'piu'] },
+  { name: 'Radio Monte Carlo', q: 'Radio Monte Carlo', desc: 'Música suave y elegante', not: ['2', 'cafe'] },
+  { name: 'Radio Bruno', q: 'Radio Bruno', desc: 'Éxitos italianos', not: ['estate', 'pesaro'] },
+  { name: 'Radio Zeta', q: 'Radio Zeta', desc: 'Música italiana nueva' },
+  { name: 'RDS', q: 'RDS 100% Grandi Successi', desc: '100% grandes éxitos', must: 'rds' },
+  { name: 'Rai Radio 2', q: 'Rai Radio 2', desc: 'La radio de la RAI', must: 'rai radio 2' },
+];
+const RB = ['de1', 'fi1', 'de2', 'nl1', 'at1'].map(s => `https://${s}.api.radio-browser.info`);
+
+// ---------- utilidades ----------
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s*\(\d+\)$/, '').toLowerCase()
+  .replace(/\(.*?\)|\[.*?\]/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+const fmt = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const store = {
+  get(k, max) { try { const v = JSON.parse(localStorage.getItem(k)); if (v && (!max || Date.now() - v.t < max)) return v.d; } catch (e) {} return null; },
+  set(k, d) { try { localStorage.setItem(k, JSON.stringify({ t: Date.now(), d })); } catch (e) {} },
+};
+const DAY = 86400000;
+
+// pedidos por el celu (Kotlin) para no depender del navegador
+let reqN = 0; const waiting = {};
+window.__res = (id, status, text) => { const w = waiting[id]; if (!w) return; delete waiting[id]; w(status, text); };
+function http(url) {
+  return new Promise((ok, bad) => {
+    const id = 'r' + (++reqN);
+    waiting[id] = (st, txt) => {
+      if (st >= 200 && st < 300) { try { ok(JSON.parse(txt)); } catch (e) { bad(e); } }
+      else bad(Object.assign(new Error('HTTP ' + st), { status: st }));
+    };
+    Android.get(url, id);
+  });
+}
+// Discogs sin token: maximo 25 pedidos por minuto, se hacen de a uno y se guardan
+let dq = Promise.resolve();
+function discogs(path) {
+  const key = 'dg:' + path;
+  const hit = store.get(key, 7 * DAY);
+  if (hit) return Promise.resolve(hit);
+  const p = dq.then(async () => {
+    for (let i = 0; i < 3; i++) {
+      try { const d = await http('https://api.discogs.com' + path); store.set(key, d); return d; }
+      catch (e) { if (e.status === 429) { await new Promise(r => setTimeout(r, 20000)); continue; } throw e; }
+    }
+    throw new Error('Discogs ocupado');
+  });
+  dq = p.catch(() => {}).then(() => new Promise(r => setTimeout(r, 700)));
+  return p;
+}
+function nativeSongs() {
+  return new Promise((ok, bad) => {
+    const id = 'r' + (++reqN);
+    waiting[id] = (st, txt) => st === 200 ? ok(JSON.parse(txt)) : bad(new Error(st === 403 ? 'permiso' : txt));
+    Android.songs(id);
+  });
+}
+
+// ---------- navegacion ----------
+const TITLES = { home: 'Música de Mamá', radio: 'Radios italianas', artists: 'Cantantes', mine: 'Mis canciones' };
+const hist = [];
+let cur = 'home';
+function show(v, title, push = true) {
+  if (push && v !== cur) hist.push({ v: cur, title: $('title').textContent, y: scrollY });
+  cur = v;
+  document.querySelectorAll('.view').forEach(e => e.classList.toggle('on', e.id === 'v-' + v));
+  $('title').textContent = title || TITLES[v] || '';
+  $('back').classList.toggle('show', v !== 'home');
+  scrollTo(0, 0);
+  if (v === 'radio') renderRadio();
+  if (v === 'artists') renderArtists();
+  if (v === 'mine') loadMine();
+}
+window.goBack = function () {
+  if ($('full').classList.contains('show')) { closeFull(); return true; }
+  const h = hist.pop();
+  if (!h) return false;
+  show(h.v, h.title, false);
+  if (h.v === 'artist' || h.v === 'album') { /* contenido ya armado */ }
+  setTimeout(() => scrollTo(0, h.y), 0);
+  return true;
+};
+
+// ---------- radios ----------
+async function rbSearch(path) {
+  for (const base of RB) {
+    try { return await http(base + path); } catch (e) {}
+  }
+  throw new Error('sin radios');
+}
+async function resolveStation(st) {
+  const key = 'st:' + st.name;
+  const hit = store.get(key, 3 * DAY);
+  if (hit) return hit;
+  const list = await rbSearch(`/json/stations/search?name=${encodeURIComponent(st.q)}&countrycode=IT&hidebroken=true&order=clickcount&reverse=true&limit=20`);
+  const must = norm(st.must || st.q);
+  const ok = list.filter(s => {
+    const raw = String(s.name || '').toLowerCase();
+    const n = norm(s.name);
+    return n.includes(must) && !(st.not || []).some(w => raw.includes(w) || n.split(' ').includes(norm(w)));
+  });
+  const s = ok[0] || list[0];
+  if (!s) throw new Error('no encontrada');
+  const d = { url: s.url_resolved || s.url, art: s.favicon || '' };
+  store.set(key, d);
+  return d;
+}
+function rowHtml(img, ph, title, sub, extra) {
+  return `${img ? `<img src="${esc(img)}" onerror="this.outerHTML='<div class=ph>${ph}</div>'" alt="">` : `<div class="ph">${ph}</div>`}
+    <div class="t"><b>${esc(title)}</b><span>${esc(sub)}</span></div><span class="go">${extra || '▶'}</span>`;
+}
+function renderRadio() {
+  $('radio-list').innerHTML = '';
+  STATIONS.forEach(st => {
+    const b = document.createElement('button');
+    b.className = 'row';
+    b.innerHTML = rowHtml('', '📻', st.name, st.desc);
+    b.onclick = () => playStation(st);
+    $('radio-list').appendChild(b);
+  });
+  if ($('radio-more').dataset.done) return;
+  rbSearch('/json/stations/search?countrycode=IT&tag=italian&hidebroken=true&order=clickcount&reverse=true&limit=40')
+    .then(list => {
+      const names = new Set(STATIONS.map(s => norm(s.name)));
+      const seen = new Set();
+      const box = $('radio-more'); box.innerHTML = '';
+      list.forEach(s => {
+        const n = norm(s.name);
+        if (!n || seen.has(n) || names.has(n)) return; seen.add(n);
+        const b = document.createElement('button');
+        b.className = 'row';
+        b.innerHTML = rowHtml(s.favicon, '📻', s.name.trim(), (s.tags || '').split(',').slice(0, 3).join(', ') || 'Radio de Italia');
+        b.onclick = () => playQueue([{ url: s.url_resolved || s.url, title: s.name.trim(), artist: 'Radio en vivo', art: s.favicon || '' }], 0);
+        box.appendChild(b);
+      });
+      box.dataset.done = 1;
+      if (!box.children.length) box.innerHTML = '<div class="msg">No hay más radios por ahora.</div>';
+    })
+    .catch(() => { $('radio-more').innerHTML = '<div class="msg">Sin internet. Probá de nuevo en un rato.</div>'; });
+}
+async function playStation(st) {
+  toast('Conectando con ' + st.name + '…');
+  try {
+    const d = await resolveStation(st);
+    playQueue([{ url: d.url, title: st.name, artist: 'Radio en vivo · ' + st.desc, art: d.art }], 0);
+  } catch (e) {
+    try { localStorage.removeItem('st:' + st.name); } catch (x) {}
+    toast('No se pudo conectar. ¿Hay internet?');
+  }
+}
+
+// ---------- cantantes (Discogs) ----------
+let ARTISTS = [];
+const artistsReady = fetch('artists.json').then(r => r.json()).then(d => { ARTISTS = d.artists || []; }).catch(() => {});
+async function renderArtists() {
+  await artistsReady;
+  const g = $('artist-grid');
+  if (g.children.length) return;
+  if (!ARTISTS.length) { g.outerHTML = '<div class="msg">No hay cantantes cargados.</div>'; return; }
+  ARTISTS.forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'tile';
+    const img = a.photo || (a.albums && a.albums[0] && a.albums[0].cover);
+    b.innerHTML = (img ? `<img src="${esc(img)}" loading="lazy" onerror="this.outerHTML='<div class=ph>🎤</div>'" alt="">` : '<div class="ph">🎤</div>') +
+      `<b>${esc(a.name)}</b>`;
+    b.onclick = () => openArtist(a);
+    g.appendChild(b);
+  });
+}
+function myMatches(artistName) {
+  const an = norm(artistName).split(' & ')[0];
+  const first = an.split(' ').slice(-1)[0];
+  return (MINE || []).filter(s => { const x = norm(s.artist); return x.includes(an) || (first.length > 3 && x.includes(first)); });
+}
+async function openArtist(a) {
+  const v = $('v-artist');
+  show('artist', a.name);
+  const img = a.photo || (a.albums && a.albums[0] && a.albums[0].cover);
+  v.innerHTML = `<div class="hero">${img ? `<img src="${esc(img)}" alt="">` : '<div class="ph">🎤</div>'}
+    <div><h3>${esc(a.name)}</h3><p id="a-count"></p></div></div>
+    <div id="a-mine"></div><h2>Sus discos</h2><div id="a-albums"><div class="msg"><span class="spin"></span></div></div>`;
+  ensureMine(false).then(() => {
+    const m = myMatches(a.name);
+    if (m.length) {
+      $('a-mine').innerHTML = `<button class="btn">▶ Escuchar sus ${m.length} canciones del celu</button>`;
+      $('a-mine').firstChild.onclick = () => playQueue(shuffle(m.slice()), 0);
+    } else {
+      $('a-mine').innerHTML = `<div class="note">💡 Para escuchar las canciones de ${esc(a.name)}, guardalas en el celu (MP3) y aparecen solas acá. Mientras tanto, <b>Radio Italia</b> pasa sus temas todo el día.</div>
+        <button class="btn red">📻 Escuchar Radio Italia</button>`;
+      $('a-mine').querySelector('.btn').onclick = () => playStation(STATIONS[0]);
+    }
+  });
+  let albums = a.albums && a.albums.length ? a.albums : null;
+  if (!albums) {
+    try {
+      albums = [];
+      const seen = new Set();
+      for (let page = 1; page <= 2; page++) {
+        const d = await discogs(`/artists/${a.id}/releases?sort=year&sort_order=desc&per_page=100&page=${page}`);
+        (d.releases || []).forEach(r => {
+          if (r.type !== 'master' || r.role !== 'Main' || !r.year) return;
+          const k = norm(r.title); if (seen.has(k)) return; seen.add(k);
+          albums.push({ id: r.id, title: r.title, year: r.year, cover: r.thumb || '' });
+        });
+        if (!d.pagination || page >= d.pagination.pages) break;
+      }
+      a.albums = albums;
+    } catch (e) {
+      if (cur === 'artist') $('a-albums').innerHTML = '<div class="msg">No se pudo cargar de Discogs. Probá en un ratito.</div>';
+      return;
+    }
+  }
+  if (cur !== 'artist' || $('title').textContent !== a.name) return;
+  $('a-count').textContent = albums.length + ' discos';
+  const box = $('a-albums'); box.innerHTML = '';
+  albums.forEach(al => {
+    const b = document.createElement('button');
+    b.className = 'row';
+    b.innerHTML = rowHtml(al.cover, '💿', al.title, String(al.year), '›');
+    b.onclick = () => openAlbum(a, al);
+    box.appendChild(b);
+  });
+}
+async function openAlbum(a, al) {
+  const v = $('v-album');
+  show('album', al.title);
+  v.innerHTML = `<div class="hero">${al.cover ? `<img src="${esc(al.cover)}" alt="">` : '<div class="ph">💿</div>'}
+    <div><h3>${esc(al.title)}</h3><p>${esc(a.name)} · ${esc(al.year)}</p></div></div>
+    <div id="al-play"></div><div id="al-tracks"><div class="msg"><span class="spin"></span></div></div>`;
+  let m;
+  try { m = await discogs('/masters/' + al.id); }
+  catch (e) { $('al-tracks').innerHTML = '<div class="msg">No se pudo cargar de Discogs. Probá en un ratito.</div>'; return; }
+  await ensureMine(false);
+  const mine = myMatches(a.name);
+  const tracks = (m.tracklist || []).filter(t => t.type_ === 'track');
+  const queue = [];
+  const box = $('al-tracks'); box.innerHTML = '';
+  tracks.forEach((t, i) => {
+    const tn = norm(t.title);
+    const song = tn && mine.find(s => { const x = norm(s.title); return x === tn || (tn.length > 5 && (x.includes(tn) || tn.includes(x) && x.length > 5)); });
+    const b = document.createElement('button');
+    b.className = 'row' + (song ? '' : ' off');
+    b.innerHTML = `<div class="ph" style="font-size:20px;font-weight:700">${i + 1}</div>
+      <div class="t"><b>${esc(t.title)}</b><span>${song ? 'Está en tu celu · tocá para escuchar' : (t.duration || '') + (t.duration ? ' · ' : '') + 'No está en el celu'}</span></div>
+      <span class="go">${song ? '▶' : ''}</span>`;
+    if (song) {
+      const qi = queue.length; queue.push(song);
+      b.onclick = () => playQueue(queue, qi);
+    } else b.onclick = () => toast('Esta canción no está guardada en el celu');
+    box.appendChild(b);
+  });
+  if (queue.length) {
+    $('al-play').innerHTML = `<button class="btn">▶ Escuchar el disco (${queue.length})</button>`;
+    $('al-play').firstChild.onclick = () => playQueue(queue, 0);
+  } else {
+    $('al-play').innerHTML = `<div class="note">Estas canciones no están guardadas en el celu. Si las copiás (MP3), se pueden escuchar desde acá.</div>`;
+  }
+  if (!tracks.length) box.innerHTML = '<div class="msg">Discogs no tiene la lista de canciones de este disco.</div>';
+}
+
+// ---------- mis canciones ----------
+let MINE = null; let mineErr = '';
+async function ensureMine(ask) {
+  if (MINE) return MINE;
+  if (!ask && !store.get('mineAsked')) return [];
+  store.set('mineAsked', 1);
+  try { MINE = await nativeSongs(); mineErr = ''; }
+  catch (e) { mineErr = e.message; MINE = null; return []; }
+  return MINE;
+}
+async function loadMine() {
+  $('mine-list').innerHTML = '<div class="msg"><span class="spin"></span></div>';
+  MINE = null;
+  await ensureMine(true);
+  renderMine();
+}
+let mineView = [];
+function renderMine() {
+  const box = $('mine-list');
+  if (!MINE) {
+    box.innerHTML = mineErr === 'permiso'
+      ? '<div class="note">Para ver tus canciones, la app necesita permiso para leer la música del celu.</div><button class="btn" onclick="loadMine()">Dar permiso</button>'
+      : '<div class="msg">No se pudieron leer las canciones.</div>';
+    return;
+  }
+  if (!MINE.length) {
+    box.innerHTML = '<div class="note">Todavía no hay canciones guardadas en el celu. Copiá archivos MP3 a la carpeta <b>Música</b> y van a aparecer acá.</div>';
+    return;
+  }
+  const q = norm($('q').value);
+  mineView = q ? MINE.filter(s => norm(s.title + ' ' + s.artist + ' ' + s.album).includes(q)) : MINE;
+  box.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  mineView.slice(0, 400).forEach((s, i) => {
+    const b = document.createElement('button');
+    b.className = 'row' + (S.title === s.title && S.artist === s.artist ? ' now' : '');
+    b.innerHTML = rowHtml('', '🎵', s.title, (s.artist || 'Sin cantante') + ' · ' + fmt(s.dur));
+    b.onclick = () => playQueue(mineView, i);
+    frag.appendChild(b);
+  });
+  box.appendChild(frag);
+  if (!mineView.length) box.innerHTML = '<div class="msg">No encontré nada con eso.</div>';
+}
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function shuffleMine() { if (MINE && MINE.length) playQueue(shuffle((mineView.length ? mineView : MINE).slice()), 0); }
+
+// ---------- reproductor ----------
+let S = { playing: false, idle: true, title: '', artist: '', dur: 0, pos: 0 };
+function playQueue(list, i) {
+  const q = list.slice(0, 500).map(s => ({ url: s.url, title: s.title || '', artist: s.artist || '', art: s.art || '' }));
+  Android.play(JSON.stringify(q), i);
+  toast('▶ ' + (q[i] && q[i].title || ''));
+}
+function artHtml(src, ph) { return src ? `<img src="${esc(src)}" onerror="this.outerHTML='<div class=ph>${ph}</div>'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">` : ph; }
+let lastArt = null;
+window.onPlayer = function (s) {
+  const changed = s.title !== S.title || s.artist !== S.artist;
+  S = s;
+  $('bar').classList.toggle('show', !s.idle);
+  const pp = s.buffering && s.wants ? '⏳' : (s.wants ? '⏸' : '▶');
+  $('bar-pp').textContent = pp; $('f-pp').textContent = pp;
+  $('bar-title').textContent = s.title; $('bar-artist').textContent = s.artist;
+  $('f-title').textContent = s.title; $('f-artist').textContent = s.artist;
+  const art = s.art && !s.art.startsWith('content:') ? s.art : '';
+  if (art !== lastArt) { lastArt = art; $('bar-art').innerHTML = artHtml(art, '🎵'); $('f-art').innerHTML = artHtml(art, '🎵'); }
+  $('f-live').style.display = s.live ? 'inline-block' : 'none';
+  $('f-prog').style.display = s.live ? 'none' : 'block';
+  $('f-prev').disabled = s.live && !s.hasPrev; $('f-next').disabled = !s.hasNext;
+  if (!s.live && s.dur > 0) {
+    if (document.activeElement !== $('f-range')) $('f-range').value = Math.round(s.pos / s.dur * 1000);
+    $('f-pos').textContent = fmt(s.pos); $('f-dur').textContent = fmt(s.dur);
+  }
+  const e = $('f-err'); e.textContent = s.error; e.style.display = s.error ? 'block' : 'none';
+  const left = s.sleepAt ? Math.max(0, Math.ceil((s.sleepAt - Date.now()) / 60000)) : 0;
+  $('f-sleep-txt').textContent = left ? `⏰ Se apaga en ${left} min` : '⏰ Apagar la música en…';
+  if (!left) document.querySelectorAll('.sleep button').forEach(b => b.classList.toggle('on', false));
+  if (changed && cur === 'mine') renderMine();
+};
+function setSleep(m) {
+  Android.sleep(m);
+  document.querySelectorAll('.sleep button').forEach(b => b.classList.toggle('on', +b.dataset.m === m && m > 0));
+  toast(m ? `La música se apaga en ${m >= 60 ? '1 hora' : m + ' minutos'}` : 'Sin apagado automático');
+}
+function openFull() { if (!S.idle) $('full').classList.add('show'); }
+function closeFull() { $('full').classList.remove('show'); }
+
+// avisito abajo
+let tt;
+function toast(t) {
+  let el = $('toast');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'toast';
+    el.style.cssText = 'position:fixed;left:16px;right:16px;bottom:120px;z-index:30;background:#2A1A14;color:#fff;padding:16px;border-radius:16px;font-size:19px;text-align:center;transition:opacity .3s;pointer-events:none';
+    document.body.appendChild(el);
+  }
+  el.textContent = t; el.style.opacity = 1;
+  clearTimeout(tt); tt = setTimeout(() => el.style.opacity = 0, 2600);
+}
+</script>
+</body>
+</html>
