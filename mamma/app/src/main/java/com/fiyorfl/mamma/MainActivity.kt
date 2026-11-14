@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ComponentName
-import android.content.ContentUris
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
@@ -12,7 +11,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -40,7 +38,6 @@ class MainActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
     private val net = Executors.newFixedThreadPool(4)
     private var lastError: String = ""
-    private var pendingSongsId: String? = null
 
     private val ticker = object : Runnable {
         override fun run() {
@@ -144,53 +141,6 @@ class MainActivity : Activity() {
         js("window.__res(${JSONObject.quote(id)}, $status, ${JSONObject.quote(text)})")
     }
 
-    private fun hasAudioPermission(): Boolean {
-        val p = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO
-        else Manifest.permission.READ_EXTERNAL_STORAGE
-        return checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun loadSongs(id: String) {
-        net.execute {
-            val arr = JSONArray()
-            try {
-                val proj = arrayOf(
-                    MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE,
-                    MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM,
-                    MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.ALBUM_ID
-                )
-                contentResolver.query(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, proj,
-                    "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} > 45000",
-                    null, "${MediaStore.Audio.Media.ARTIST} COLLATE NOCASE, ${MediaStore.Audio.Media.TITLE} COLLATE NOCASE"
-                )?.use { cur ->
-                    while (cur.moveToNext()) {
-                        val sid = cur.getLong(0)
-                        val o = JSONObject()
-                        o.put("url", ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, sid).toString())
-                        o.put("title", cur.getString(1) ?: "")
-                        val ar = cur.getString(2) ?: ""
-                        o.put("artist", if (ar == "<unknown>") "" else ar)
-                        o.put("album", cur.getString(3) ?: "")
-                        o.put("dur", cur.getLong(4))
-                        o.put("art", ContentUris.withAppendedId(Uri.parse("content://media/external/audio/albumart"), cur.getLong(5)).toString())
-                        arr.put(o)
-                    }
-                }
-                answer(id, 200, arr.toString())
-            } catch (e: Exception) {
-                answer(id, 500, e.message ?: "error")
-            }
-        }
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        val id = pendingSongsId ?: return
-        pendingSongsId = null
-        if (hasAudioPermission()) loadSongs(id) else answer(id, 403, "sin permiso")
-    }
-
     inner class Bridge {
         /** Pedido HTTP hecho desde el celu (Discogs, radios). Responde en window.__res(id, status, texto) */
         @JavascriptInterface
@@ -268,18 +218,5 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun sleep(minutes: Int) { main.post { PlayerService.instance?.sleep(minutes); pushState() } }
 
-        /** Canciones guardadas en el celu */
-        @JavascriptInterface
-        fun songs(id: String) {
-            main.post {
-                if (hasAudioPermission()) loadSongs(id)
-                else {
-                    pendingSongsId = id
-                    val p = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO
-                    else Manifest.permission.READ_EXTERNAL_STORAGE
-                    requestPermissions(arrayOf(p), 1)
-                }
-            }
-        }
     }
 }

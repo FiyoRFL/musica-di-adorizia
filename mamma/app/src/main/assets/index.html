@@ -97,15 +97,6 @@ h2{font-size:22px;margin:22px 4px 12px;color:var(--rosso2)}
     <button class="big" onclick="show('fav')"><span class="ico">❤️</span><span>Eros · Laura · Bocelli<small>Sus canciones de siempre</small></span></button>
     <button class="big" onclick="show('artists')"><span class="ico">🎤</span><span>Cantantes<small>Elegí un cantante</small></span></button>
     <button class="big" onclick="show('search')"><span class="ico">🔎</span><span>Buscar<small>Un cantante, un disco o una canción</small></span></button>
-    <button class="big" onclick="show('radio')"><span class="ico">📻</span><span>Radios italianas<small>En vivo desde Italia</small></span></button>
-    <button class="big" onclick="show('mine')"><span class="ico">🎵</span><span>Mis canciones<small>Las que están guardadas en el celu</small></span></button>
-  </section>
-
-  <!-- RADIOS -->
-  <section class="view" id="v-radio">
-    <div id="radio-list"></div>
-    <h2>Más radios de Italia</h2>
-    <div id="radio-more"><div class="msg"><span class="spin"></span></div></div>
   </section>
 
   <!-- CANTANTES -->
@@ -127,12 +118,6 @@ h2{font-size:22px;margin:22px 4px 12px;color:var(--rosso2)}
   <!-- UN DISCO -->
   <section class="view" id="v-album"></section>
 
-  <!-- MIS CANCIONES -->
-  <section class="view" id="v-mine">
-    <input class="search" id="q" placeholder="🔎 Buscar canción o cantante" oninput="renderMine()">
-    <button class="btn" onclick="shuffleMine()">🔀 Escuchar todo mezclado</button>
-    <div id="mine-list"></div>
-  </section>
 </main>
 
 <!-- barra de abajo -->
@@ -173,20 +158,6 @@ h2{font-size:22px;margin:22px 4px 12px;color:var(--rosso2)}
 <script src="keys.js"></script>
 <script>
 'use strict';
-// ---------- radios (se buscan en Radio Browser, gratis y sin anuncios propios) ----------
-const STATIONS = [
-  { name: 'Radio Italia', q: 'Radio Italia', desc: 'Solo música italiana', must: 'radio italia', not: ['anni', 'live', 'trend', 'latino'] },
-  { name: 'Radio Birikina', q: 'Birikina', desc: 'Canciones italianas de siempre' },
-  { name: 'RTL 102.5', q: 'RTL 102.5', desc: 'La radio más escuchada de Italia', must: 'rtl 102', not: ['best', 'napuli', 'doppio', 'guerra'] },
-  { name: 'Radio Subasio', q: 'Radio Subasio', desc: 'Música italiana e internacional', not: ['+', 'piu'] },
-  { name: 'Radio Monte Carlo', q: 'Radio Monte Carlo', desc: 'Música suave y elegante', not: ['2', 'cafe'] },
-  { name: 'Radio Bruno', q: 'Radio Bruno', desc: 'Éxitos italianos', not: ['estate', 'pesaro'] },
-  { name: 'Radio Zeta', q: 'Radio Zeta', desc: 'Música italiana nueva' },
-  { name: 'RDS', q: 'RDS 100% Grandi Successi', desc: '100% grandes éxitos', must: 'rds' },
-  { name: 'Rai Radio 2', q: 'Rai Radio 2', desc: 'La radio de la RAI', must: 'rai radio 2' },
-];
-const RB = ['de1', 'fi1', 'de2', 'nl1', 'at1'].map(s => `https://${s}.api.radio-browser.info`);
-
 // ---------- utilidades ----------
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -229,16 +200,8 @@ function discogs(path) {
   dq = p.catch(() => {}).then(() => new Promise(r => setTimeout(r, window.DGK ? 300 : 700)));
   return p;
 }
-function nativeSongs() {
-  return new Promise((ok, bad) => {
-    const id = 'r' + (++reqN);
-    waiting[id] = (st, txt) => st === 200 ? ok(JSON.parse(txt)) : bad(new Error(st === 403 ? 'permiso' : txt));
-    Android.songs(id);
-  });
-}
-
 // ---------- navegacion ----------
-const TITLES = { home: 'Música de Mamá', radio: 'Radios italianas', artists: 'Cantantes', mine: 'Mis canciones', fav: 'Eros · Laura · Bocelli', search: 'Buscar' };
+const TITLES = { home: 'Música de Mamá', artists: 'Cantantes', fav: 'Eros · Laura · Bocelli', search: 'Buscar' };
 const hist = [];
 let cur = 'home';
 function show(v, title, push = true) {
@@ -248,9 +211,7 @@ function show(v, title, push = true) {
   $('title').textContent = title || TITLES[v] || '';
   $('back').classList.toggle('show', v !== 'home');
   scrollTo(0, 0);
-  if (v === 'radio') renderRadio();
   if (v === 'artists') renderArtists();
-  if (v === 'mine') loadMine();
   if (v === 'fav') renderFav();
   if (v === 'search') setTimeout(() => $('sq').focus(), 100);
 }
@@ -264,74 +225,10 @@ window.goBack = function () {
   return true;
 };
 
-// ---------- radios ----------
-async function rbSearch(path) {
-  for (const base of RB) {
-    try { return await http(base + path); } catch (e) {}
-  }
-  throw new Error('sin radios');
-}
-async function resolveStation(st) {
-  const key = 'st:' + st.name;
-  const hit = store.get(key, 3 * DAY);
-  if (hit) return hit;
-  const list = await rbSearch(`/json/stations/search?name=${encodeURIComponent(st.q)}&countrycode=IT&hidebroken=true&order=clickcount&reverse=true&limit=20`);
-  const must = norm(st.must || st.q);
-  const ok = list.filter(s => {
-    const raw = String(s.name || '').toLowerCase();
-    const n = norm(s.name);
-    return n.includes(must) && !(st.not || []).some(w => raw.includes(w) || n.split(' ').includes(norm(w)));
-  });
-  const s = ok[0] || list[0];
-  if (!s) throw new Error('no encontrada');
-  const d = { url: s.url_resolved || s.url, art: s.favicon || '' };
-  store.set(key, d);
-  return d;
-}
 function rowHtml(img, ph, title, sub, extra) {
   return `${img ? `<img src="${esc(img)}" onerror="this.outerHTML='<div class=ph>${ph}</div>'" alt="">` : `<div class="ph">${ph}</div>`}
     <div class="t"><b>${esc(title)}</b><span>${esc(sub)}</span></div><span class="go">${extra || '▶'}</span>`;
 }
-function renderRadio() {
-  $('radio-list').innerHTML = '';
-  STATIONS.forEach(st => {
-    const b = document.createElement('button');
-    b.className = 'row';
-    b.innerHTML = rowHtml('', '📻', st.name, st.desc);
-    b.onclick = () => playStation(st);
-    $('radio-list').appendChild(b);
-  });
-  if ($('radio-more').dataset.done) return;
-  rbSearch('/json/stations/search?countrycode=IT&tag=italian&hidebroken=true&order=clickcount&reverse=true&limit=40')
-    .then(list => {
-      const names = new Set(STATIONS.map(s => norm(s.name)));
-      const seen = new Set();
-      const box = $('radio-more'); box.innerHTML = '';
-      list.forEach(s => {
-        const n = norm(s.name);
-        if (!n || seen.has(n) || names.has(n)) return; seen.add(n);
-        const b = document.createElement('button');
-        b.className = 'row';
-        b.innerHTML = rowHtml(s.favicon, '📻', s.name.trim(), (s.tags || '').split(',').slice(0, 3).join(', ') || 'Radio de Italia');
-        b.onclick = () => playQueue([{ url: s.url_resolved || s.url, title: s.name.trim(), artist: 'Radio en vivo', art: s.favicon || '' }], 0);
-        box.appendChild(b);
-      });
-      box.dataset.done = 1;
-      if (!box.children.length) box.innerHTML = '<div class="msg">No hay más radios por ahora.</div>';
-    })
-    .catch(() => { $('radio-more').innerHTML = '<div class="msg">Sin internet. Probá de nuevo en un rato.</div>'; });
-}
-async function playStation(st) {
-  toast('Conectando con ' + st.name + '…');
-  try {
-    const d = await resolveStation(st);
-    playQueue([{ url: d.url, title: st.name, artist: 'Radio en vivo · ' + st.desc, art: d.art }], 0);
-  } catch (e) {
-    try { localStorage.removeItem('st:' + st.name); } catch (x) {}
-    toast('No se pudo conectar. ¿Hay internet?');
-  }
-}
-
 // ---------- cantantes (Discogs) ----------
 let ARTISTS = [];
 const artistsReady = fetch('artists.json').then(r => r.json()).then(d => { ARTISTS = d.artists || []; }).catch(() => {});
@@ -584,51 +481,7 @@ async function doSearch() {
   }
 }
 
-// ---------- mis canciones ----------
-let MINE = null; let mineErr = '';
-async function ensureMine(ask) {
-  if (MINE) return MINE;
-  if (!ask && !store.get('mineAsked')) return [];
-  store.set('mineAsked', 1);
-  try { MINE = await nativeSongs(); mineErr = ''; }
-  catch (e) { mineErr = e.message; MINE = null; return []; }
-  return MINE;
-}
-async function loadMine() {
-  $('mine-list').innerHTML = '<div class="msg"><span class="spin"></span></div>';
-  MINE = null;
-  await ensureMine(true);
-  renderMine();
-}
-let mineView = [];
-function renderMine() {
-  const box = $('mine-list');
-  if (!MINE) {
-    box.innerHTML = mineErr === 'permiso'
-      ? '<div class="note">Para ver tus canciones, la app necesita permiso para leer la música del celu.</div><button class="btn" onclick="loadMine()">Dar permiso</button>'
-      : '<div class="msg">No se pudieron leer las canciones.</div>';
-    return;
-  }
-  if (!MINE.length) {
-    box.innerHTML = '<div class="note">Todavía no hay canciones guardadas en el celu. Copiá archivos MP3 a la carpeta <b>Música</b> y van a aparecer acá.</div>';
-    return;
-  }
-  const q = norm($('q').value);
-  mineView = q ? MINE.filter(s => norm(s.title + ' ' + s.artist + ' ' + s.album).includes(q)) : MINE;
-  box.innerHTML = '';
-  const frag = document.createDocumentFragment();
-  mineView.slice(0, 400).forEach((s, i) => {
-    const b = document.createElement('button');
-    b.className = 'row' + (S.title === s.title && S.artist === s.artist ? ' now' : '');
-    b.innerHTML = rowHtml('', '🎵', s.title, (s.artist || 'Sin cantante') + ' · ' + fmt(s.dur));
-    b.onclick = () => playQueue(mineView, i);
-    frag.appendChild(b);
-  });
-  box.appendChild(frag);
-  if (!mineView.length) box.innerHTML = '<div class="msg">No encontré nada con eso.</div>';
-}
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
-function shuffleMine() { if (MINE && MINE.length) playQueue(shuffle((mineView.length ? mineView : MINE).slice()), 0); }
 
 // ---------- reproductor ----------
 let S = { playing: false, idle: true, title: '', artist: '', dur: 0, pos: 0 };
@@ -660,7 +513,6 @@ window.onPlayer = function (s) {
   const left = s.sleepAt ? Math.max(0, Math.ceil((s.sleepAt - Date.now()) / 60000)) : 0;
   $('f-sleep-txt').textContent = left ? `⏰ Se apaga en ${left} min` : '⏰ Apagar la música en…';
   if (!left) document.querySelectorAll('.sleep button').forEach(b => b.classList.toggle('on', false));
-  if (changed && cur === 'mine') renderMine();
 };
 function setSleep(m) {
   Android.sleep(m);

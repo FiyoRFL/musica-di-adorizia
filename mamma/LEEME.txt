@@ -6,7 +6,6 @@ MUSICA DE MAMA - app Android de musica italiana de todos los tiempos
 - El audio sale de YouTube con el motor de FIYODIGGER (motor directo + yt-dlp de respaldo):
   suena con la pantalla apagada, con controles en la pantalla de bloqueo y sin anuncios.
   Si un video esta bloqueado o borrado, pasa solo al siguiente.
-- Radios italianas en vivo y "Mis canciones" (MP3 del celu).
 - Apagado automatico (15 / 30 / 60 min).
 
 COMPILAR: se compila sola al subir cambios en mamma/ (o Actions -> "Musica de Mama APK" -> Run workflow).
