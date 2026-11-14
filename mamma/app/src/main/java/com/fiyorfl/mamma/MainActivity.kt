@@ -197,7 +197,7 @@ class MainActivity : Activity() {
         fun get(url: String, id: String) {
             net.execute {
                 var status = 0
-                var text = ""
+                var text: String
                 try {
                     val c = URL(url).openConnection() as HttpURLConnection
                     c.connectTimeout = 15000

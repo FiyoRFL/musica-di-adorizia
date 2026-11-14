@@ -39,10 +39,6 @@ jobs:
         run: gradle :app:assembleRelease --no-daemon --stacktrace
       - name: Nombrar APK
         run: mkdir -p out && cp mamma/app/build/outputs/apk/release/*.apk "out/MusicaDeMama-${MAMMA_VERSION}.apk"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: MusicaDeMama-apk
-          path: out/*.apk
       - name: Publicar en Releases
         env:
           GH_TOKEN: ${{ github.token }}
