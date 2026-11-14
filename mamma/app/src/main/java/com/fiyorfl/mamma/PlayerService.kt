@@ -4,10 +4,17 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
+import android.net.Uri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.datasource.DataSpec
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 
@@ -18,6 +25,7 @@ import androidx.media3.session.MediaSessionService
 class PlayerService : MediaSessionService() {
     private var session: MediaSession? = null
     private val handler = Handler(Looper.getMainLooper())
+    private var errorsInRow = 0
     private val sleepRunnable = Runnable {
         session?.player?.pause()
         sleepAt = 0L
@@ -25,7 +33,23 @@ class PlayerService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
+        YouTube.warmUp(this)
+        // Las canciones de YouTube vienen como yt://ID y se convierten al link del audio justo antes de sonar
+        val http = DefaultHttpDataSource.Factory()
+            .setAllowCrossProtocolRedirects(true)
+            .setConnectTimeoutMs(15000)
+            .setReadTimeoutMs(20000)
+        val resolving = ResolvingDataSource.Factory(DefaultDataSource.Factory(this, http)) { spec: DataSpec ->
+            if (spec.uri.scheme == "yt") {
+                val st = YouTube.resolve(this, spec.uri.host ?: "")
+                spec.buildUpon()
+                    .setUri(Uri.parse(st.url))
+                    .setHttpRequestHeaders(mapOf("User-Agent" to st.ua))
+                    .build()
+            } else spec
+        }
         val player = ExoPlayer.Builder(this)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(this).setDataSourceFactory(resolving))
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(C.USAGE_MEDIA)
@@ -37,6 +61,17 @@ class PlayerService : MediaSessionService() {
             .setWakeMode(C.WAKE_MODE_NETWORK) // no se corta con la pantalla apagada
             .build()
         player.repeatMode = Player.REPEAT_MODE_OFF
+        // Si un video esta bloqueado o borrado, pasa solo al siguiente (hasta 10 seguidos)
+        player.addListener(object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                if (++errorsInRow <= 10 && player.hasNextMediaItem()) {
+                    player.seekToNextMediaItem()
+                    player.prepare()
+                    player.play()
+                }
+            }
+            override fun onIsPlayingChanged(isPlaying: Boolean) { if (isPlaying) errorsInRow = 0 }
+        })
         val open = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT

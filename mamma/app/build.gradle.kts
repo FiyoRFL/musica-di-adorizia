@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.chaquo.python")
 }
 android {
     namespace = "com.fiyorfl.mamma"
@@ -11,6 +12,7 @@ android {
         targetSdk = 34
         versionCode = (System.getenv("MAMMA_CODE") ?: "1").toInt()
         versionName = System.getenv("MAMMA_VERSION") ?: "1.0.0"
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
     // Llave fija: cada version nueva se instala ENCIMA de la anterior
     signingConfigs {
@@ -35,11 +37,19 @@ android {
     kotlinOptions { jvmTarget = "17" }
     lint { checkReleaseBuilds = false; abortOnError = false }
 }
+// yt-dlp (respaldo del motor directo de YouTube), igual que FIYODIGGER
+chaquopy {
+    defaultConfig {
+        version = "3.11"
+        pip { install("yt-dlp") }
+    }
+}
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.webkit:webkit:1.11.0")
     implementation("androidx.media3:media3-exoplayer:1.4.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.4.1")
     implementation("androidx.media3:media3-session:1.4.1")
+    implementation("androidx.media3:media3-datasource:1.4.1")
     implementation("com.google.guava:guava:33.2.1-android")
 }

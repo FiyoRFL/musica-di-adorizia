@@ -1,10 +1,14 @@
-MUSICA DE MAMA - app Android para escuchar musica italiana
-===========================================================
-- Radio Italia con un toque + radios italianas (Radio Browser, gratis, sin token).
-- Cantantes: Eros Ramazzotti, Laura Pausini, Andrea Bocelli y mas, con sus discos y canciones de Discogs (sin token en el celu).
-- Mis canciones: los MP3 guardados en el celu. Si una cancion de un disco de Discogs esta en el celu, se toca desde el disco.
-- Sigue sonando con la pantalla apagada, con controles en la pantalla de bloqueo. Sin anuncios.
+MUSICA DE MAMA - app Android de musica italiana de todos los tiempos
+=====================================================================
+- "Musica italiana de todos los tiempos": un toque y suena sin parar (48 cantantes, de Modugno a Il Volo).
+- "Eros - Laura - Bocelli": sus canciones, mezcladas.
+- Cantantes, discos y BUSCAR: Discogs con las claves de FIYODIGGER (secretos DISCOGS_KEY / DISCOGS_SECRET).
+- El audio sale de YouTube con el motor de FIYODIGGER (motor directo + yt-dlp de respaldo):
+  suena con la pantalla apagada, con controles en la pantalla de bloqueo y sin anuncios.
+  Si un video esta bloqueado o borrado, pasa solo al siguiente.
+- Radios italianas en vivo y "Mis canciones" (MP3 del celu).
 - Apagado automatico (15 / 30 / 60 min).
 
-COMPILAR: Actions -> "Musica de Mama APK" -> Run workflow. La APK queda en Releases (mamma-v1.0.N).
+COMPILAR: se compila sola al subir cambios en mamma/ (o Actions -> "Musica de Mama APK" -> Run workflow).
+La APK queda en Releases (mamma-v1.0.N). Tarda unos 15 minutos (arma el catalogo desde Discogs).
 mamma.jks es la llave: no la borres (sirve para instalar versiones nuevas encima).

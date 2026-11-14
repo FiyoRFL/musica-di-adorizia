@@ -1,0 +1,2 @@
+window.DGK = "";
+window.DGS = "";

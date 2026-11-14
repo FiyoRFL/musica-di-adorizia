@@ -93,9 +93,11 @@ h2{font-size:22px;margin:22px 4px 12px;color:var(--rosso2)}
 <main>
   <!-- INICIO -->
   <section class="view on" id="v-home">
-    <button class="big quick" onclick="playStation(STATIONS[0])"><span class="ico">📻</span><span>Radio Italia<small>Solo música italiana, todo el día</small></span></button>
-    <button class="big" onclick="show('radio')"><span class="ico">🎙️</span><span>Radios italianas<small>Elegí una y escuchá</small></span></button>
-    <button class="big" onclick="show('artists')"><span class="ico">🎤</span><span>Cantantes<small>Eros, Laura, Bocelli y más</small></span></button>
+    <button class="big quick" onclick="playTodos()"><span class="ico">🇮🇹</span><span>Música italiana de todos los tiempos<small>Tocá y escuchá sin parar</small></span></button>
+    <button class="big" onclick="show('fav')"><span class="ico">❤️</span><span>Eros · Laura · Bocelli<small>Sus canciones de siempre</small></span></button>
+    <button class="big" onclick="show('artists')"><span class="ico">🎤</span><span>Cantantes<small>Elegí un cantante</small></span></button>
+    <button class="big" onclick="show('search')"><span class="ico">🔎</span><span>Buscar<small>Un cantante, un disco o una canción</small></span></button>
+    <button class="big" onclick="show('radio')"><span class="ico">📻</span><span>Radios italianas<small>En vivo desde Italia</small></span></button>
     <button class="big" onclick="show('mine')"><span class="ico">🎵</span><span>Mis canciones<small>Las que están guardadas en el celu</small></span></button>
   </section>
 
@@ -108,6 +110,16 @@ h2{font-size:22px;margin:22px 4px 12px;color:var(--rosso2)}
 
   <!-- CANTANTES -->
   <section class="view" id="v-artists"><div class="grid" id="artist-grid"></div></section>
+
+  <!-- LOS DE MAMA -->
+  <section class="view" id="v-fav"></section>
+
+  <!-- BUSCAR -->
+  <section class="view" id="v-search">
+    <form onsubmit="event.preventDefault();doSearch()"><input class="search" id="sq" type="search" enterkeyhint="search" placeholder="🔎 Ej: Eros Ramazzotti, Con te partirò"></form>
+    <button class="btn" onclick="doSearch()">Buscar</button>
+    <div id="search-res"></div>
+  </section>
 
   <!-- UN CANTANTE -->
   <section class="view" id="v-artist"></section>
@@ -158,6 +170,7 @@ h2{font-size:22px;margin:22px 4px 12px;color:var(--rosso2)}
   </div>
 </div>
 
+<script src="keys.js"></script>
 <script>
 'use strict';
 // ---------- radios (se buscan en Radio Browser, gratis y sin anuncios propios) ----------
@@ -207,12 +220,13 @@ function discogs(path) {
   if (hit) return Promise.resolve(hit);
   const p = dq.then(async () => {
     for (let i = 0; i < 3; i++) {
-      try { const d = await http('https://api.discogs.com' + path); store.set(key, d); return d; }
+      const auth = window.DGK ? (path.includes('?') ? '&' : '?') + 'key=' + DGK + '&secret=' + DGS : '';
+      try { const d = await http('https://api.discogs.com' + path + auth); store.set(key, d); return d; }
       catch (e) { if (e.status === 429) { await new Promise(r => setTimeout(r, 20000)); continue; } throw e; }
     }
     throw new Error('Discogs ocupado');
   });
-  dq = p.catch(() => {}).then(() => new Promise(r => setTimeout(r, 700)));
+  dq = p.catch(() => {}).then(() => new Promise(r => setTimeout(r, window.DGK ? 300 : 700)));
   return p;
 }
 function nativeSongs() {
@@ -224,7 +238,7 @@ function nativeSongs() {
 }
 
 // ---------- navegacion ----------
-const TITLES = { home: 'Música de Mamá', radio: 'Radios italianas', artists: 'Cantantes', mine: 'Mis canciones' };
+const TITLES = { home: 'Música de Mamá', radio: 'Radios italianas', artists: 'Cantantes', mine: 'Mis canciones', fav: 'Eros · Laura · Bocelli', search: 'Buscar' };
 const hist = [];
 let cur = 'home';
 function show(v, title, push = true) {
@@ -237,6 +251,8 @@ function show(v, title, push = true) {
   if (v === 'radio') renderRadio();
   if (v === 'artists') renderArtists();
   if (v === 'mine') loadMine();
+  if (v === 'fav') renderFav();
+  if (v === 'search') setTimeout(() => $('sq').focus(), 100);
 }
 window.goBack = function () {
   if ($('full').classList.contains('show')) { closeFull(); return true; }
@@ -334,10 +350,111 @@ async function renderArtists() {
     g.appendChild(b);
   });
 }
-function myMatches(artistName) {
-  const an = norm(artistName).split(' & ')[0];
-  const first = an.split(' ').slice(-1)[0];
-  return (MINE || []).filter(s => { const x = norm(s.artist); return x.includes(an) || (first.length > 3 && x.includes(first)); });
+// ---------- canciones de YouTube (videos que figuran en Discogs) ----------
+const BADV = /full album|album completo|álbum completo|intervista|interview|karaoke|tutorial|reaction|8d audio|slowed|medley/i;
+function ytId(u) { const m = /(?:v=|youtu\.be\/|embed\/)([\w-]{11})/.exec(u || ''); return m ? m[1] : null; }
+function cleanTitle(t, artist) {
+  let s = String(t || '');
+  const a = norm(artist).split(' ')[0];
+  s = s.replace(/\((official|video|audio|videoclip|lyric|testo|hd|hq|remaster)[^)]*\)|\[(official|video|audio|hd|hq|remaster)[^\]]*\]/gi, '');
+  const parts = s.split(/\s[-–—]\s/);
+  if (parts.length > 1 && norm(parts[0]).includes(a)) s = parts.slice(1).join(' - ');
+  return s.replace(/\s{2,}/g, ' ').trim();
+}
+function ytItem(s, artist) {
+  return { url: 'yt://' + s.y, title: s.t, artist: artist + (s.yr ? ' · ' + s.yr : ''), art: 'https://i.ytimg.com/vi/' + s.y + '/hqdefault.jpg' };
+}
+function videosOf(m, artist, al) {
+  const out = []; const seen = new Set();
+  (m.videos || []).forEach(v => {
+    const y = ytId(v.uri);
+    if (!y || seen.has(y) || BADV.test(v.title || '') || (v.duration && (v.duration < 90 || v.duration > 600))) return;
+    seen.add(y);
+    out.push({ y, t: cleanTitle(v.title, artist), al: al && al.title, yr: (al && al.year) || m.year });
+  });
+  return out;
+}
+function songRow(s, artist, queue, i) {
+  const b = document.createElement('button');
+  b.className = 'row';
+  b.innerHTML = rowHtml('https://i.ytimg.com/vi/' + s.y + '/default.jpg', '🎵', s.t, (s.al ? s.al + ' · ' : '') + (s.yr || artist || ''));
+  b.onclick = () => playQueue(queue, i);
+  return b;
+}
+function allSongs() {
+  const out = [];
+  ARTISTS.forEach(a => (a.songs || []).forEach(s => out.push(ytItem(s, a.name))));
+  return out;
+}
+async function playTodos() {
+  await artistsReady;
+  const all = shuffle(allSongs());
+  if (!all.length) { toast('Todavía no hay canciones cargadas'); return; }
+  // que no toque dos seguidas del mismo cantante
+  for (let i = 1; i < all.length; i++) {
+    if (all[i].artist.split(' · ')[0] === all[i - 1].artist.split(' · ')[0]) {
+      const j = all.findIndex((x, k) => k > i && x.artist.split(' · ')[0] !== all[i - 1].artist.split(' · ')[0]);
+      if (j > 0) [all[i], all[j]] = [all[j], all[i]];
+    }
+  }
+  playQueue(all, 0);
+}
+async function renderFav() {
+  await artistsReady;
+  const v = $('v-fav');
+  if (v.children.length) return;
+  ARTISTS.slice(0, 3).forEach(a => {
+    const songs = (a.songs || []).map(s => ytItem(s, a.name));
+    const b = document.createElement('button');
+    b.className = 'big';
+    b.innerHTML = `${a.photo ? `<img src="${esc(a.photo)}" style="width:64px;height:64px;border-radius:50%;object-fit:cover" alt="">` : '<span class="ico">🎤</span>'}
+      <span>${esc(a.name)}<small>▶ ${songs.length} canciones, mezcladas</small></span>`;
+    b.onclick = () => songs.length ? playQueue(shuffle(songs.slice()), 0) : openArtist(a);
+    v.appendChild(b);
+  });
+  const all = shuffle([].concat(...ARTISTS.slice(0, 3).map(a => (a.songs || []).map(s => ytItem(s, a.name)))));
+  const b = document.createElement('button');
+  b.className = 'btn red'; b.textContent = '🔀 Los tres mezclados';
+  b.onclick = () => all.length && playQueue(shuffle(all.slice()), 0);
+  v.appendChild(b);
+  const h = document.createElement('h2'); h.textContent = 'Ver discos y canciones'; v.appendChild(h);
+  ARTISTS.slice(0, 3).forEach(a => {
+    const r = document.createElement('button');
+    r.className = 'row';
+    r.innerHTML = rowHtml(a.photo, '🎤', a.name, 'Discos y canciones', '›');
+    r.onclick = () => openArtist(a);
+    v.appendChild(r);
+  });
+}
+async function loadAlbums(a) {
+  if (a.albums && a.albums.length) return a.albums;
+  const albums = [];
+  const seen = new Set();
+  for (let page = 1; page <= 2; page++) {
+    const d = await discogs(`/artists/${a.id}/releases?sort=year&sort_order=desc&per_page=100&page=${page}`);
+    (d.releases || []).forEach(r => {
+      if (r.type !== 'master' || r.role !== 'Main' || !r.year) return;
+      const k = norm(r.title); if (seen.has(k)) return; seen.add(k);
+      albums.push({ id: r.id, title: r.title, year: r.year, cover: r.thumb || '' });
+    });
+    if (!d.pagination || page >= d.pagination.pages) break;
+  }
+  a.albums = albums;
+  return albums;
+}
+async function loadSongs(a) {
+  if (a.songs && a.songs.length) return a.songs;
+  const albums = await loadAlbums(a);
+  const songs = []; const seen = new Set();
+  const step = Math.max(1, Math.floor(albums.length / 8));
+  for (const al of albums.filter((_, i) => i % step === 0).slice(0, 8)) {
+    try {
+      const m = await discogs('/masters/' + al.id);
+      videosOf(m, a.name, al).slice(0, 4).forEach(s => { const k = norm(s.t); if (!seen.has(k)) { seen.add(k); songs.push(s); } });
+    } catch (e) {}
+  }
+  a.songs = songs;
+  return songs;
 }
 async function openArtist(a) {
   const v = $('v-artist');
@@ -345,84 +462,126 @@ async function openArtist(a) {
   const img = a.photo || (a.albums && a.albums[0] && a.albums[0].cover);
   v.innerHTML = `<div class="hero">${img ? `<img src="${esc(img)}" alt="">` : '<div class="ph">🎤</div>'}
     <div><h3>${esc(a.name)}</h3><p id="a-count"></p></div></div>
-    <div id="a-mine"></div><h2>Sus discos</h2><div id="a-albums"><div class="msg"><span class="spin"></span></div></div>`;
-  ensureMine(false).then(() => {
-    const m = myMatches(a.name);
-    if (m.length) {
-      $('a-mine').innerHTML = `<button class="btn">▶ Escuchar sus ${m.length} canciones del celu</button>`;
-      $('a-mine').firstChild.onclick = () => playQueue(shuffle(m.slice()), 0);
-    } else {
-      $('a-mine').innerHTML = `<div class="note">💡 Para escuchar las canciones de ${esc(a.name)}, guardalas en el celu (MP3) y aparecen solas acá. Mientras tanto, <b>Radio Italia</b> pasa sus temas todo el día.</div>
-        <button class="btn red">📻 Escuchar Radio Italia</button>`;
-      $('a-mine').querySelector('.btn').onclick = () => playStation(STATIONS[0]);
-    }
-  });
-  let albums = a.albums && a.albums.length ? a.albums : null;
-  if (!albums) {
-    try {
-      albums = [];
-      const seen = new Set();
-      for (let page = 1; page <= 2; page++) {
-        const d = await discogs(`/artists/${a.id}/releases?sort=year&sort_order=desc&per_page=100&page=${page}`);
-        (d.releases || []).forEach(r => {
-          if (r.type !== 'master' || r.role !== 'Main' || !r.year) return;
-          const k = norm(r.title); if (seen.has(k)) return; seen.add(k);
-          albums.push({ id: r.id, title: r.title, year: r.year, cover: r.thumb || '' });
-        });
-        if (!d.pagination || page >= d.pagination.pages) break;
-      }
-      a.albums = albums;
-    } catch (e) {
-      if (cur === 'artist') $('a-albums').innerHTML = '<div class="msg">No se pudo cargar de Discogs. Probá en un ratito.</div>';
-      return;
-    }
+    <div id="a-play"></div><h2>Sus canciones</h2><div id="a-songs"><div class="msg"><span class="spin"></span></div></div>
+    <h2>Sus discos</h2><div id="a-albums"><div class="msg"><span class="spin"></span></div></div>`;
+  const here = () => cur === 'artist' && $('title').textContent === a.name;
+  loadSongs(a).then(songs => {
+    if (!here()) return;
+    const q = songs.map(s => ytItem(s, a.name));
+    $('a-play').innerHTML = q.length ? '<button class="btn red">▶ Escuchar a ' + esc(a.name) + '</button>' : '';
+    if (q.length) $('a-play').firstChild.onclick = () => playQueue(shuffle(q.slice()), 0);
+    const box = $('a-songs'); box.innerHTML = '';
+    songs.forEach((s, i) => box.appendChild(songRow(s, a.name, q, i)));
+    if (!songs.length) box.innerHTML = '<div class="msg">No encontré canciones. Mirá sus discos abajo.</div>';
+  }).catch(() => { if (here()) $('a-songs').innerHTML = '<div class="msg">No se pudo cargar. Probá en un ratito.</div>'; });
+  try {
+    const albums = await loadAlbums(a);
+    if (!here()) return;
+    $('a-count').textContent = albums.length + ' discos';
+    const box = $('a-albums'); box.innerHTML = '';
+    albums.forEach(al => {
+      const b = document.createElement('button');
+      b.className = 'row';
+      b.innerHTML = rowHtml(al.cover, '💿', al.title, String(al.year), '›');
+      b.onclick = () => openAlbum(a.name, al);
+      box.appendChild(b);
+    });
+  } catch (e) {
+    if (here()) $('a-albums').innerHTML = '<div class="msg">No se pudo cargar de Discogs. Probá en un ratito.</div>';
   }
-  if (cur !== 'artist' || $('title').textContent !== a.name) return;
-  $('a-count').textContent = albums.length + ' discos';
-  const box = $('a-albums'); box.innerHTML = '';
-  albums.forEach(al => {
-    const b = document.createElement('button');
-    b.className = 'row';
-    b.innerHTML = rowHtml(al.cover, '💿', al.title, String(al.year), '›');
-    b.onclick = () => openAlbum(a, al);
-    box.appendChild(b);
-  });
 }
-async function openAlbum(a, al) {
+async function openAlbum(artist, al) {
   const v = $('v-album');
   show('album', al.title);
   v.innerHTML = `<div class="hero">${al.cover ? `<img src="${esc(al.cover)}" alt="">` : '<div class="ph">💿</div>'}
-    <div><h3>${esc(al.title)}</h3><p>${esc(a.name)} · ${esc(al.year)}</p></div></div>
+    <div><h3>${esc(al.title)}</h3><p>${esc(artist)}${al.year ? ' · ' + esc(al.year) : ''}</p></div></div>
     <div id="al-play"></div><div id="al-tracks"><div class="msg"><span class="spin"></span></div></div>`;
   let m;
-  try { m = await discogs('/masters/' + al.id); }
+  try { m = await discogs((al.release ? '/releases/' : '/masters/') + al.id); }
   catch (e) { $('al-tracks').innerHTML = '<div class="msg">No se pudo cargar de Discogs. Probá en un ratito.</div>'; return; }
-  await ensureMine(false);
-  const mine = myMatches(a.name);
-  const tracks = (m.tracklist || []).filter(t => t.type_ === 'track');
-  const queue = [];
+  if (cur !== 'album') return;
+  const songs = videosOf(m, artist, al);
+  const q = songs.map(s => ytItem(s, artist));
   const box = $('al-tracks'); box.innerHTML = '';
-  tracks.forEach((t, i) => {
-    const tn = norm(t.title);
-    const song = tn && mine.find(s => { const x = norm(s.title); return x === tn || (tn.length > 5 && (x.includes(tn) || tn.includes(x) && x.length > 5)); });
-    const b = document.createElement('button');
-    b.className = 'row' + (song ? '' : ' off');
-    b.innerHTML = `<div class="ph" style="font-size:20px;font-weight:700">${i + 1}</div>
-      <div class="t"><b>${esc(t.title)}</b><span>${song ? 'Está en tu celu · tocá para escuchar' : (t.duration || '') + (t.duration ? ' · ' : '') + 'No está en el celu'}</span></div>
-      <span class="go">${song ? '▶' : ''}</span>`;
-    if (song) {
-      const qi = queue.length; queue.push(song);
-      b.onclick = () => playQueue(queue, qi);
-    } else b.onclick = () => toast('Esta canción no está guardada en el celu');
-    box.appendChild(b);
-  });
-  if (queue.length) {
-    $('al-play').innerHTML = `<button class="btn">▶ Escuchar el disco (${queue.length})</button>`;
-    $('al-play').firstChild.onclick = () => playQueue(queue, 0);
+  if (q.length) {
+    $('al-play').innerHTML = `<button class="btn red">▶ Escuchar el disco (${q.length})</button>`;
+    $('al-play').firstChild.onclick = () => playQueue(q, 0);
+    songs.forEach((s, i) => box.appendChild(songRow(s, artist, q, i)));
   } else {
-    $('al-play').innerHTML = `<div class="note">Estas canciones no están guardadas en el celu. Si las copiás (MP3), se pueden escuchar desde acá.</div>`;
+    box.innerHTML = '<div class="note">Discogs no tiene canciones para escuchar de este disco. Probá con otro.</div>';
   }
-  if (!tracks.length) box.innerHTML = '<div class="msg">Discogs no tiene la lista de canciones de este disco.</div>';
+  const tl = (m.tracklist || []).filter(t => t.type_ === 'track');
+  if (tl.length) {
+    const h = document.createElement('h2'); h.textContent = 'Lista de canciones'; box.appendChild(h);
+    const d = document.createElement('div'); d.className = 'note';
+    d.innerHTML = tl.map((t, i) => `${i + 1}. ${esc(t.title)}${t.duration ? ' <span style="color:#9b8a7e">(' + esc(t.duration) + ')</span>' : ''}`).join('<br>');
+    box.appendChild(d);
+  }
+}
+
+// ---------- buscar ----------
+async function doSearch() {
+  const q = $('sq').value.trim();
+  const box = $('search-res');
+  if (q.length < 2) return;
+  $('sq').blur();
+  box.innerHTML = '';
+  // 1) canciones que ya estan en la app (al instante)
+  await artistsReady;
+  const nq = norm(q);
+  const hits = [];
+  ARTISTS.forEach(a => (a.songs || []).forEach(s => { if (norm(s.t + ' ' + a.name).includes(nq)) hits.push(ytItem(s, a.name)); }));
+  if (hits.length) {
+    const h = document.createElement('h2'); h.textContent = 'Canciones'; box.appendChild(h);
+    hits.slice(0, 30).forEach((s, i) => {
+      const b = document.createElement('button');
+      b.className = 'row';
+      b.innerHTML = rowHtml(s.art.replace('hqdefault', 'default'), '🎵', s.title, s.artist);
+      b.onclick = () => playQueue(hits, i);
+      box.appendChild(b);
+    });
+  }
+  const wait = document.createElement('div'); wait.className = 'msg'; wait.innerHTML = '<span class="spin"></span> Buscando en Discogs…';
+  box.appendChild(wait);
+  if (!window.DGK) { wait.textContent = ''; if (!hits.length) box.innerHTML = '<div class="msg">No encontré nada con eso.</div>'; return; }
+  try {
+    const [ar, ms] = await Promise.all([
+      discogs('/database/search?type=artist&per_page=6&q=' + encodeURIComponent(q)),
+      discogs('/database/search?type=master&per_page=30&q=' + encodeURIComponent(q)),
+    ]);
+    if ($('sq').value.trim() !== q) return;
+    wait.remove();
+    const arts = (ar.results || []).slice(0, 4);
+    if (arts.length) {
+      const h = document.createElement('h2'); h.textContent = 'Cantantes'; box.appendChild(h);
+      arts.forEach(r => {
+        const known = ARTISTS.find(a => a.id === r.id);
+        const a = known || { name: r.title.replace(/\s*\(\d+\)$/, ''), id: r.id, photo: r.thumb || '' };
+        const b = document.createElement('button');
+        b.className = 'row';
+        b.innerHTML = rowHtml(a.photo || r.thumb, '🎤', a.name, 'Ver canciones y discos', '›');
+        b.onclick = () => openArtist(a);
+        box.appendChild(b);
+      });
+    }
+    const alb = (ms.results || []);
+    if (alb.length) {
+      const h = document.createElement('h2'); h.textContent = 'Discos'; box.appendChild(h);
+      alb.forEach(r => {
+        const parts = r.title.split(' - ');
+        const artist = parts.length > 1 ? parts[0].replace(/\s*\(\d+\)$/, '') : '';
+        const al = { id: r.id, title: parts.length > 1 ? parts.slice(1).join(' - ') : r.title, year: r.year || '', cover: r.thumb || '' };
+        const b = document.createElement('button');
+        b.className = 'row';
+        b.innerHTML = rowHtml(r.thumb, '💿', al.title, artist + (al.year ? ' · ' + al.year : ''), '›');
+        b.onclick = () => openAlbum(artist, al);
+        box.appendChild(b);
+      });
+    }
+    if (!box.children.length) box.innerHTML = '<div class="msg">No encontré nada con eso.</div>';
+  } catch (e) {
+    wait.textContent = 'No se pudo buscar en Discogs. ¿Hay internet?';
+  }
 }
 
 // ---------- mis canciones ----------

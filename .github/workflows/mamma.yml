@@ -18,6 +18,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - uses: actions/setup-node@v5
         with:
           node-version: 20
@@ -47,5 +50,5 @@ jobs:
             --repo "${{ github.repository }}" \
             --target "${{ github.sha }}" \
             --title "Música de Mamá ${MAMMA_VERSION}" \
-            --notes "APK de Música de Mamá. Bajala desde el celu y abrila para instalar." \
+            --notes "Música de Mamá: música italiana de todos los tiempos (Discogs + YouTube con pantalla apagada). Bajala desde el celu y abrila para instalar." \
             --latest=false
