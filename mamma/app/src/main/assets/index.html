@@ -323,7 +323,14 @@ function rowHtml(img, ph, title, sub, extra) {
 }
 // ---------- cantantes (Discogs) ----------
 let ARTISTS = [];
-const artistsReady = fetch('artists.json').then(r => r.json()).then(d => { ARTISTS = d.artists || []; }).catch(() => {});
+const artistsReady = fetch('artists.json').then(r => r.json()).then(d => {
+  ARTISTS = d.artists || [];
+  // sin canciones repetidas por cantante
+  ARTISTS.forEach(a => {
+    const seen = new Set();
+    a.songs = (a.songs || []).filter(s => { const k = norm(songTitle(s.t, a.name)); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+  });
+}).catch(() => {});
 async function renderArtists() {
   await artistsReady;
   const g = $('artist-grid');
@@ -351,8 +358,19 @@ function cleanTitle(t, artist) {
   return s.replace(/\s{2,}/g, ' ').trim();
 }
 const tidy = t => String(t || '').replace(/\[[^\]]*\]/g, '').replace(/\((19|20)\d\d\)/g, '').replace(/\s{2,}/g, ' ').replace(/^[\s\-–—:]+|[\s\-–—:]+$/g, '').trim() || String(t || '');
+// saca el nombre del cantante pegado al titulo ("Io Amo - Fausto Leali", "Fausto Leali: Io Amo")
+function songTitle(t, artist) {
+  let x = tidy(t);
+  const first = norm(artist).split(' ')[0];
+  const parts = x.split(/\s[-–—]\s|:\s/);
+  if (parts.length > 1 && first.length > 2) {
+    const keep = parts.filter(p => !norm(p).includes(first));
+    if (keep.length && keep.length < parts.length) x = keep.join(' - ');
+  }
+  return x.replace(/\s*\((official|video|audio|lyric|testo|live)[^)]*\)/gi, '').trim() || tidy(t);
+}
 function ytItem(s, artist) {
-  return { url: 'yt://' + s.y, title: tidy(s.t), artist: artist + (s.yr ? ' · ' + s.yr : ''), art: 'https://i.ytimg.com/vi/' + s.y + '/hqdefault.jpg' };
+  return { url: 'yt://' + s.y, title: songTitle(s.t, artist), artist: artist + (s.yr ? ' · ' + s.yr : ''), art: 'https://i.ytimg.com/vi/' + s.y + '/hqdefault.jpg' };
 }
 function videosOf(m, artist, al) {
   const out = []; const seen = new Set();
@@ -367,7 +385,7 @@ function videosOf(m, artist, al) {
 function songRow(s, artist, queue, i) {
   const b = document.createElement('button');
   b.className = 'row';
-  b.innerHTML = rowHtml('https://i.ytimg.com/vi/' + s.y + '/mqdefault.jpg', IC.note, tidy(s.t), (s.al ? s.al + ' · ' : '') + (s.yr || artist || ''));
+  b.innerHTML = rowHtml('https://i.ytimg.com/vi/' + s.y + '/mqdefault.jpg', IC.note, songTitle(s.t, artist), (s.al ? s.al + ' · ' : '') + (s.yr || artist || ''));
   b.onclick = () => playQueue(queue, i);
   return b;
 }
