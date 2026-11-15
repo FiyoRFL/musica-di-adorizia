@@ -50,6 +50,11 @@ class PlayerService : MediaSessionService() {
         }
         val player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(this).setDataSourceFactory(resolving))
+            .setLoadControl(
+                androidx.media3.exoplayer.DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(15_000, 60_000, 1_000, 2_000) // arranca con 1 s de audio
+                    .build()
+            )
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(C.USAGE_MEDIA)
@@ -71,6 +76,9 @@ class PlayerService : MediaSessionService() {
                 }
             }
             override fun onIsPlayingChanged(isPlaying: Boolean) { if (isPlaying) errorsInRow = 0 }
+            // Mientras suena una, deja listas las 2 que siguen (el pase de tema es instantaneo)
+            override fun onMediaItemTransition(item: androidx.media3.common.MediaItem?, reason: Int) { prefetch(player) }
+            override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) { prefetch(player) }
         })
         val open = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java),
@@ -78,6 +86,16 @@ class PlayerService : MediaSessionService() {
         )
         session = MediaSession.Builder(this, player).setSessionActivity(open).build()
         instance = this
+    }
+
+    private val prefetchPool = java.util.concurrent.Executors.newFixedThreadPool(2)
+
+    private fun prefetch(p: Player) {
+        val i = p.currentMediaItemIndex
+        val ids = (1..2).mapNotNull { k ->
+            if (i + k < p.mediaItemCount) p.getMediaItemAt(i + k).localConfiguration?.uri else null
+        }.filter { it.scheme == "yt" }.mapNotNull { it.host }
+        ids.forEach { id -> prefetchPool.execute { try { YouTube.resolve(this, id) } catch (_: Throwable) { } } }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
@@ -99,6 +117,7 @@ class PlayerService : MediaSessionService() {
 
     override fun onDestroy() {
         handler.removeCallbacks(sleepRunnable)
+        prefetchPool.shutdownNow()
         session?.run {
             player.release()
             release()

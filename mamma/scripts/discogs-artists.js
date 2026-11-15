@@ -8,15 +8,19 @@ const path = require('path');
 const ARTISTS = [
   // los de mama primero
   'Eros Ramazzotti', 'Laura Pausini', 'Andrea Bocelli',
-  // clasicos de siempre
-  'Domenico Modugno', 'Mina', 'Adriano Celentano', 'Lucio Battisti', 'Gianni Morandi', 'Rita Pavone',
-  'Gigliola Cinquetti', 'Massimo Ranieri', 'Little Tony', 'Bobby Solo', 'Nicola Di Bari', 'Ornella Vanoni',
-  'Gino Paoli', 'Peppino Di Capri', 'Patty Pravo', 'Iva Zanicchi', 'Fred Bongusto',
-  'Toto Cutugno', 'Al Bano & Romina Power', 'Umberto Tozzi', 'Raffaella Carrà', 'Ricchi E Poveri',
-  'Claudio Baglioni', 'Riccardo Cocciante', 'Lucio Dalla', 'Pooh', 'Pupo', 'Matia Bazar', 'Drupi',
-  'Franco Battiato', 'Fiorella Mannoia', 'Antonello Venditti', 'Renato Zero', 'Vasco Rossi', 'Paolo Conte',
-  'Zucchero', 'Gianna Nannini', 'Marco Masini', 'Nek', 'Biagio Antonacci', 'Tiziano Ferro', 'Giorgia',
-  'Alessandra Amoroso', 'Il Volo', 'Laura Pausini'
+  // anos 50 y 60
+  'Domenico Modugno', 'Mina', 'Adriano Celentano', 'Gino Paoli', 'Sergio Endrigo', 'Peppino Di Capri',
+  'Fred Bongusto', 'Rita Pavone', 'Gianni Morandi', 'Gigliola Cinquetti', 'Bobby Solo', 'Little Tony',
+  'Ornella Vanoni', 'Massimo Ranieri', 'Patty Pravo', 'Orietta Berti', 'Iva Zanicchi', 'Fausto Leali',
+  // anos 70
+  'Lucio Battisti', 'Nicola Di Bari', 'Mia Martini', 'Marcella Bella', 'Drupi', 'Riccardo Cocciante',
+  'Claudio Baglioni', 'Lucio Dalla', 'Fabrizio De André', 'Pooh', 'Umberto Tozzi', 'Al Bano & Romina Power',
+  'Raffaella Carrà', 'Ricchi E Poveri', 'Toto Cutugno', 'Loredana Bertè', 'Edoardo Bennato', 'Paolo Conte',
+  // anos 80
+  'Pupo', 'Matia Bazar', 'Franco Battiato', 'Vasco Rossi', 'Zucchero', 'Gianna Nannini', 'Anna Oxa',
+  'Enrico Ruggeri', 'Raf', 'Amedeo Minghi',
+  // anos 90 en adelante
+  'Mietta', 'Marco Masini', 'Nek', '883', 'Tiziano Ferro', 'Il Volo'
 ].filter((x, i, a) => a.indexOf(x) === i);
 // IDs de Discogs ya verificados (sirven para armar el catalogo sin claves)
 const KNOWN = {
@@ -25,9 +29,18 @@ const KNOWN = {
   'Toto Cutugno': 215246, 'Al Bano & Romina Power': 303666, 'Umberto Tozzi': 176185, 'Raffaella Carrà': 302018,
   'Ricchi E Poveri': 310136, 'Claudio Baglioni': 638411, 'Riccardo Cocciante': 399868, 'Lucio Dalla': 207470,
   'Mina': 319972, 'Marco Masini': 268725, 'Pooh': 380875,
+  'Raf': 246232, 'Mietta': 299780, 'Amedeo Minghi': 490247, 'Matia Bazar': 136886, 'Drupi': 327416,
+  'Gigliola Cinquetti': 464799, 'Bobby Solo': 409131, 'Patty Pravo': 339934, 'Massimo Ranieri': 319960,
+  'Fausto Leali': 327903, 'Gino Paoli': 319978, 'Ornella Vanoni': 361057, 'Gianni Morandi': 410333,
+  'Little Tony': 217518, 'Domenico Modugno': 311963, 'Peppino Di Capri': 492344, 'Fred Bongusto': 9772,
+  'Sergio Endrigo': 319968, 'Rita Pavone': 380929, 'Nicola Di Bari': 851817, 'Iva Zanicchi': 949064,
+  'Orietta Berti': 920359, '883': 137933, 'Loredana Bertè': 366682, 'Edoardo Bennato': 53807,
+  'Franco Battiato': 114390, 'Lucio Battisti': 250902, 'Anna Oxa': 297663, 'Pupo': 345918,
+  'Mia Martini': 556869, 'Vasco Rossi': 130185, 'Enrico Ruggeri': 503126, 'Paolo Conte': 273695,
+  'Marcella Bella': 503123, 'Fabrizio De André': 660740,
 };
-const ALBUMS_WITH_SONGS = 10;   // discos por cantante de donde se sacan canciones
-const SONGS_PER_ALBUM = 4;
+const ALBUMS_WITH_SONGS = 14;   // discos por cantante de donde se sacan canciones
+const SONGS_PER_ALBUM = 5;
 
 const KEY = (process.env.DISCOGS_KEY || '').trim();
 const SECRET = (process.env.DISCOGS_SECRET || '').trim();
@@ -79,7 +92,7 @@ async function albums(id) {
   return out;
 }
 
-const BAD = /full album|album completo|álbum completo|intervista|interview|karaoke|instrumental|cover by|tutorial|reaction|lyrics video by|8d audio|slowed|remix|medley/i;
+const BAD = /christmas|natale|navidad|xmas|jingle|full album|album completo|álbum completo|intervista|interview|karaoke|instrumental|cover by|tutorial|reaction|lyrics video by|8d audio|slowed|remix|medley/i;
 function ytId(u) { const m = /(?:v=|youtu\.be\/|embed\/)([\w-]{11})/.exec(u || ''); return m ? m[1] : null; }
 function cleanTitle(t, artist) {
   let s = String(t || '');
@@ -87,6 +100,7 @@ function cleanTitle(t, artist) {
   s = s.replace(/\((official|video|audio|videoclip|lyric|testo|hd|hq|remaster)[^)]*\)|\[(official|video|audio|hd|hq|remaster)[^\]]*\]/gi, '');
   const parts = s.split(/\s[-–—]\s/);
   if (parts.length > 1 && norm(parts[0]).includes(a)) s = parts.slice(1).join(' - ');
+  s = s.replace(/\[[^\]]*\]/g, '').replace(/\((19|20)\d\d\)/g, '');
   return s.replace(/\s{2,}/g, ' ').trim();
 }
 

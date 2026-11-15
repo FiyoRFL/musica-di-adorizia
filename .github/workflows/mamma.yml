@@ -1,11 +1,8 @@
 # Musica de Mama: compila la APK y la deja en Releases (tag mamma-vX.Y.Z)
+# Solo a mano (Actions -> "Musica de Mama APK" -> Run workflow) para no gastar minutos de FIYODIGGER.
 name: Musica de Mama APK
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'mamma/**'
-      - '.github/workflows/mamma.yml'
 permissions:
   contents: write
 
