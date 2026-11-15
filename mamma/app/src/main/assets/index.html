@@ -5,211 +5,204 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Musica di Adorizia</title>
 <style>
-/* Musica di Adorizia
-   Idea: un 45 giri italiano de los 60. El disco es lo unico que llama la atencion;
-   todo lo demas es tranquilo, grande y facil de leer (68 anos, anteojos).
-   Colores de la bandera usados con mesura: marmol, verde oscuro y rojo solo para la accion. */
-@font-face{font-family:Bodoni;src:url(fonts/bodoni-700.woff2) format("woff2");font-weight:700;font-display:swap}
-@font-face{font-family:Bodoni;src:url(fonts/bodoni-400i.woff2) format("woff2");font-weight:400;font-style:italic;font-display:swap}
+/* Musica di Adorizia - tema oscuro estilo Claude, con los colores de Italia.
+   Fondo carbon calido, superficies apenas mas claras, saludo en serif centrado,
+   una caja principal redondeada y botones tipo pastilla.
+   El rojo de la bandera es la accion (escuchar, play); el verde, el progreso. */
+@font-face{font-family:News;src:url(fonts/newsreader-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:News;src:url(fonts/newsreader-500.woff2) format("woff2");font-weight:500;font-display:swap}
 @font-face{font-family:Atkinson;src:url(fonts/atkinson-400.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:Atkinson;src:url(fonts/atkinson-700.woff2) format("woff2");font-weight:700;font-display:swap}
 :root{
-  --marmo:#EFEEEA;      /* fondo: marmol blanco */
-  --ink:#0E3B2E;        /* texto: verde oscuro italiano */
-  --soft:#5A6B64;       /* texto secundario */
-  --line:rgba(14,59,46,.14);
-  --rosso:#CD212A;      /* accion: rojo bandera */
-  --rosso-d:#A11820;
-  --verde:#008C45;      /* progreso y estados activos: verde bandera */
-  --paper:#FFFFFF;
-  --vinile:#000;
-  --s1:19px; --s2:24px; --s3:30px; --s4:38px; --s5:46px;   /* escala 1.25 */
-}
-@media (prefers-color-scheme: dark){
-  :root{ --marmo:#0F2A21; --ink:#EEEDE8; --soft:#A3B5AD; --line:rgba(238,237,232,.14); --paper:#16352B; }
+  --bg:#262624;        /* fondo carbon calido */
+  --surface:#30302E;   /* cajas y barras */
+  --surface2:#3A3936;  /* al tocar / elegido */
+  --line:rgba(245,244,238,.10);
+  --ink:#F5F4EE;       /* blanco calido (el blanco de la bandera) */
+  --soft:#A7A49B;
+  --rosso:#D7333A;     /* rojo Italia (accion) */
+  --rosso-d:#B0252C;
+  --verde:#2EA06A;     /* verde Italia (progreso / activo) */
+  --s1:19px; --s2:23px; --s3:28px; --s4:36px;
+  color-scheme:dark;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{background:var(--marmo)}
-body{margin:0;min-height:100vh;background:var(--marmo);color:var(--ink);font-family:Atkinson,Roboto,system-ui,sans-serif;font-size:var(--s1);line-height:1.4;-webkit-font-smoothing:antialiased}
+html{background:var(--bg)}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:Atkinson,Roboto,system-ui,sans-serif;font-size:var(--s1);line-height:1.45;-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0;text-align:left}
-button:focus-visible,input:focus-visible{outline:3px solid var(--verde);outline-offset:3px;border-radius:8px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--verde);outline-offset:3px;border-radius:12px}
 svg{display:block}
 .glass{background:transparent}
 
-/* barra de arriba: solo cuando hay para donde volver */
-header{position:sticky;top:0;z-index:5;display:none;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:var(--marmo);border-bottom:1px solid var(--line)}
+/* barra de arriba (solo fuera del inicio) */
+header{position:sticky;top:0;z-index:5;display:none;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:var(--bg);border-bottom:1px solid var(--line)}
 header.show{display:flex}
-header .back{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink);flex:none}
-header .back:active{background:var(--line)}
-header h1{font-family:Bodoni,serif;font-weight:700;font-size:var(--s2);margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lights{display:none}
-main{padding:calc(20px + env(safe-area-inset-top)) 20px 190px;max-width:640px;margin:0 auto}
-header.show + main{padding-top:16px}
+header .back{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+header .back:active{background:var(--surface)}
+header h1{font-family:News,Georgia,serif;font-weight:500;font-size:var(--s2);margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+main{padding:calc(28px + env(safe-area-inset-top)) 18px 180px;max-width:640px;margin:0 auto}
+header.show + main{padding-top:18px}
 .view{display:none}.view.on{display:block}
 
 /* ---- inicio ---- */
-.hello{font-family:Bodoni,serif;font-weight:700;font-size:var(--s5);line-height:1.05;letter-spacing:-.01em;margin:8px 0 6px}
-.count{color:var(--soft);margin:0 0 4px}
+.home-top{text-align:center;margin:8vh 0 26px}
+.mark{display:inline-flex;gap:5px;margin-bottom:16px}
+.mark i{width:9px;height:9px;border-radius:50%;display:block}
+.hello{font-family:News,Georgia,serif;font-weight:400;font-size:var(--s4);line-height:1.15;margin:0;letter-spacing:-.01em}
+.count{color:var(--soft);margin:10px 0 0;font-size:17px}
 
-/* el 45 giri */
-.deck{display:flex;flex-direction:column;align-items:center;margin:22px 0 18px}
-.vinyl{position:relative;flex:none;width:min(78vw,340px);aspect-ratio:1;border-radius:50%;display:block;
-  background:
-    conic-gradient(from 30deg, rgba(255,255,255,0) 0deg, rgba(255,255,255,.10) 35deg, rgba(255,255,255,0) 70deg, rgba(255,255,255,0) 180deg, rgba(255,255,255,.08) 215deg, rgba(255,255,255,0) 250deg),
-    repeating-radial-gradient(circle at 50% 50%, #0b0b0b 0 1.2px, #000 1.2px 3px);
-  box-shadow:0 18px 40px rgba(14,59,46,.28), inset 0 0 0 6px #050505}
-.vinyl .label{position:absolute;inset:31%;border-radius:50%;background:var(--rosso);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(255,255,255,.18)}
-.vinyl .label b{font-family:Bodoni,serif;font-style:italic;font-weight:400;font-size:clamp(17px,5.4vw,26px);line-height:1;margin-bottom:16%}
-.vinyl .label i{font-style:normal;font-size:12px;letter-spacing:.04em;opacity:.85}
-.vinyl .label img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.vinyl::after{content:"";position:absolute;left:50%;top:50%;width:3.2%;height:3.2%;margin:-1.6% 0 0 -1.6%;border-radius:50%;background:var(--marmo);box-shadow:0 0 0 1px rgba(0,0,0,.3)}
-.vinyl.gira,#bar .art.gira{will-change:transform}
-.vinyl.gira{animation:giro 1.333s linear infinite}   /* 45 vueltas por minuto */
-@keyframes giro{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion: reduce){.vinyl.gira{animation:none}}
-.deck .now{min-height:28px;margin:16px 0 0;text-align:center;color:var(--soft);font-size:var(--s1)}
-.deck .now b{color:var(--ink)}
-
-.play-all{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:68px;border-radius:999px;background:var(--rosso);color:#fff;font-size:var(--s2);font-weight:700;box-shadow:0 6px 0 var(--rosso-d)}
-.play-all:active{transform:translateY(3px);box-shadow:0 3px 0 var(--rosso-d)}
+.composer{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:14px;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+.composer .ask{display:flex;align-items:center;gap:12px;width:100%;padding:10px 8px 16px;color:var(--soft);font-size:var(--s1)}
+.composer .ask svg{stroke:var(--soft);flex:none}
+.play-all{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:64px;border-radius:14px;background:var(--rosso);color:#fff;font-size:var(--s2);font-weight:700}
+.play-all:active{background:var(--rosso-d)}
 .play-all svg{fill:#fff}
 
-h2{font-family:Bodoni,serif;font-weight:700;font-size:var(--s3);margin:34px 0 14px;line-height:1.1}
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:18px 0 0}
+.chip{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:6px 18px 6px 8px;border-radius:999px;border:1px solid var(--line);background:transparent;font-weight:700;font-size:18px}
+.chip:active{background:var(--surface)}
+.chip img,.chip .ph{width:38px;height:38px;border-radius:50%;object-fit:cover;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
+.chip .ic{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--surface2);flex:none}
+.chip .ic svg{stroke:var(--ink)}
 
-.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.trio button{text-align:center;display:block}
-.trio img,.trio .ph{width:100%;aspect-ratio:1;border-radius:50%;object-fit:cover;display:flex;align-items:center;justify-content:center;background:var(--line);font-size:34px;box-shadow:0 0 0 3px var(--paper),0 0 0 4px var(--line)}
-.trio b{display:block;font-weight:700;margin-top:10px;font-size:var(--s1)}
-.trio span{display:block;color:var(--soft);font-size:16px}
+.nowcard{display:none;align-items:center;gap:14px;margin:26px 0 0;padding:12px;border-radius:18px;background:var(--surface);border:1px solid var(--line);width:100%}
+.nowcard.show{display:flex}
+.nowcard .art{width:56px;height:56px;border-radius:10px;overflow:hidden;background:var(--surface2);flex:none;display:flex;align-items:center;justify-content:center}
+.nowcard .art svg{width:45%;height:45%;fill:var(--soft)}
+.nowcard .art img{width:100%;height:100%;object-fit:cover}
+.nowcard .t{flex:1;min-width:0}
+.nowcard small{display:block;color:var(--verde);font-size:15px;font-weight:700}
+.nowcard b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nowcard span{display:block;color:var(--soft);font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* menu y listas: filas simples con lineas finas, sin tarjetas */
-.menu,.lst{border-top:1px solid var(--line);margin:0 0 8px}
-.menu > *,.lst > .row{border-bottom:1px solid var(--line)}
-.big,.row{display:flex;align-items:center;gap:16px;width:100%;padding:14px 4px;min-height:76px}
-.big{font-size:var(--s2);font-weight:700}
+h2{font-family:News,Georgia,serif;font-weight:500;font-size:var(--s3);margin:30px 2px 12px;line-height:1.15}
+
+/* listas: filas limpias, como la barra lateral de Claude */
+.menu,.lst{margin:0 0 8px}
+.big,.row{display:flex;align-items:center;gap:14px;width:100%;padding:10px 10px;min-height:72px;border-radius:14px}
+.big:active,.row:active,.tile:active,.chip:active{background:var(--surface)}
+.big{font-size:var(--s1);font-weight:700}
 .big small{display:block;font-size:16px;color:var(--soft);font-weight:400;margin-top:2px}
-.big .ico{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;background:var(--ink);color:var(--marmo)}
-.big .ico svg{stroke:currentColor}
+.big .ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;background:var(--surface)}
+.big .ico svg{stroke:var(--ink)}
 .big .chev,.row .go{margin-left:auto;flex:none;color:var(--soft)}
-.big:active,.row:active,.tile:active,.trio button:active{background:var(--line)}
-.row img,.row .ph{width:58px;height:58px;border-radius:8px;object-fit:cover;background:var(--line);flex:none;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--soft)}
+.row img,.row .ph{width:56px;height:56px;border-radius:10px;object-fit:cover;background:var(--surface);flex:none;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--soft)}
 .row .ph svg{fill:var(--soft)}
 .row .t{flex:1;min-width:0}
 .row .t b{display:block;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .t span{display:block;font-size:16px;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
-.row .go{color:var(--rosso);font-size:26px}
-.row .go svg{fill:var(--rosso)}
-.row.now .t b{color:var(--rosso)}
+.row .go svg{fill:var(--soft)}
+.row.now{background:var(--surface)}
+.row.now .t b{color:var(--verde)}
 
-/* cantantes: fotos redondas como etiquetas de disco */
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px 14px}
-.tile{text-align:center;display:block;border-radius:12px;padding:4px}
-.tile img,.tile .ph{width:100%;aspect-ratio:1;border-radius:50%;object-fit:cover;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:38px}
-.tile b{display:block;font-weight:700;font-size:17px;margin-top:8px;line-height:1.2}
+/* cantantes */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px 12px}
+.tile{text-align:center;display:block;border-radius:16px;padding:8px 4px}
+.tile img,.tile .ph{width:100%;aspect-ratio:1;border-radius:50%;object-fit:cover;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:36px}
+.tile b{display:block;font-weight:700;font-size:16px;margin-top:8px;line-height:1.25}
 
-.hero{display:flex;gap:18px;align-items:center;margin:4px 0 22px}
-.hero img,.hero .ph{width:112px;height:112px;border-radius:50%;object-fit:cover;background:var(--line);flex:none;display:flex;align-items:center;justify-content:center;font-size:48px}
-.hero h3{font-family:Bodoni,serif;font-weight:700;font-size:var(--s3);margin:0;line-height:1.1}
+.hero{display:flex;gap:16px;align-items:center;margin:6px 0 20px}
+.hero img,.hero .ph{width:104px;height:104px;border-radius:50%;object-fit:cover;background:var(--surface);flex:none;display:flex;align-items:center;justify-content:center;font-size:44px}
+.hero h3{font-family:News,Georgia,serif;font-weight:500;font-size:var(--s3);margin:0;line-height:1.15}
 .hero p{margin:6px 0 0;color:var(--soft)}
-.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:62px;border-radius:999px;background:var(--ink);color:var(--marmo);font-size:var(--s1);font-weight:700;margin:0 0 18px;text-align:center}
-.btn.red{background:var(--rosso);color:#fff;box-shadow:0 5px 0 var(--rosso-d)}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:60px;border-radius:14px;background:var(--surface);border:1px solid var(--line);color:var(--ink);font-weight:700;margin:0 0 16px;text-align:center}
+.btn.red{background:var(--rosso);border-color:var(--rosso);color:#fff}
+.btn.red:active{background:var(--rosso-d)}
 .btn svg{stroke:currentColor}
-.btn:active{opacity:.85}
-.note{padding:14px 16px;border-left:4px solid var(--verde);background:var(--paper);margin:0 0 16px;line-height:1.5}
-.search{width:100%;font:inherit;font-size:var(--s2);padding:14px 18px;border-radius:999px;border:2px solid var(--line);background:var(--paper);color:var(--ink);margin:0 0 14px;outline:none}
+.note{padding:14px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);margin:0 0 16px;line-height:1.5;color:var(--soft)}
+.search{width:100%;font:inherit;font-size:var(--s1);padding:16px 18px;border-radius:18px;border:1px solid var(--line);background:var(--surface);color:var(--ink);margin:0 0 12px;outline:none}
+.search::placeholder{color:var(--soft)}
 .search:focus{border-color:var(--verde)}
 .msg{text-align:center;color:var(--soft);padding:28px 10px}
-.spin{display:inline-block;width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--rosso);border-radius:50%;animation:s .9s linear infinite;vertical-align:middle}
+.spin{display:inline-block;width:24px;height:24px;border:3px solid var(--line);border-top-color:var(--verde);border-radius:50%;animation:s .9s linear infinite;vertical-align:middle}
 @keyframes s{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.spin{animation-duration:3s}}
 
-/* mini reproductor */
-#bar{position:fixed;left:0;right:0;bottom:0;z-index:10;display:none;align-items:center;gap:14px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--paper);border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(14,59,46,.10)}
+/* mini reproductor flotante */
+#bar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:10;display:none;align-items:center;gap:12px;padding:10px;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.45);max-width:616px;margin:0 auto;overflow:hidden}
 #bar.show{display:flex}
-#bar .art{width:56px;height:56px;border-radius:50%;overflow:hidden;flex:none;background:#000;display:flex;align-items:center;justify-content:center}
+#bar .art{width:54px;height:54px;border-radius:10px;overflow:hidden;flex:none;background:var(--surface2);display:flex;align-items:center;justify-content:center}
 #bar .art img{width:100%;height:100%;object-fit:cover}
-#bar .art svg{width:40%;height:40%;fill:#fff}
-#bar .art.gira{animation:giro 1.333s linear infinite}
-@media (prefers-reduced-motion: reduce){#bar .art.gira{animation:none}}
+#bar .art svg{width:45%;height:45%;fill:var(--soft)}
 #bar .t{flex:1;min-width:0}
 #bar .t b{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#bar .t span{display:block;font-size:16px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#bar .pp{width:60px;height:60px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:var(--rosso);color:#fff}
+#bar .t span{display:block;font-size:15px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bar .pp{width:56px;height:56px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--rosso);color:#fff}
 #bar .pp svg{fill:#fff}
-#bar .nx{width:52px;height:52px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:var(--ink)}
+#bar .nx{width:48px;height:48px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center}
 #bar .nx svg{fill:var(--ink)}
-#bar .prog{position:absolute;left:0;right:0;top:0;height:3px;background:transparent}
+#bar .prog{position:absolute;left:0;right:0;bottom:0;height:3px}
 #bar .prog i{display:block;height:100%;width:0;background:var(--verde);transition:width 1s linear}
 
 /* reproductor grande */
-#full{position:fixed;inset:0;z-index:20;display:none;flex-direction:column;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 22px calc(22px + env(safe-area-inset-bottom));overflow:auto;background:var(--marmo)}
+#full{position:fixed;inset:0;z-index:20;display:none;flex-direction:column;align-items:center;padding:calc(8px + env(safe-area-inset-top)) 22px calc(22px + env(safe-area-inset-bottom));overflow:auto;background:var(--bg)}
 #full.show{display:flex}
 #f-bg{display:none}
-#full .close{align-self:stretch;display:flex;justify-content:center;padding:10px;color:var(--soft)}
-#full .grab{width:48px;height:5px;border-radius:3px;background:var(--line);display:block}
-#full .vinyl{width:min(80vw,360px,46vh);flex:none;margin:10px 0 22px}
-#full .vinyl .label{inset:27%}
+#full .close{align-self:stretch;display:flex;justify-content:center;padding:12px}
+#full .grab{width:46px;height:5px;border-radius:3px;background:var(--surface2);display:block}
+#full .cover{width:min(84vw,360px,44vh);aspect-ratio:1;flex:none;border-radius:18px;overflow:hidden;background:var(--surface);border:1px solid var(--line);margin:8px 0 24px;display:flex;align-items:center;justify-content:center;box-shadow:0 16px 40px rgba(0,0,0,.45)}
+#full .cover img{width:100%;height:100%;object-fit:cover}
+#full .cover svg{width:34%;height:34%;fill:var(--soft)}
 #full .info{align-self:stretch;text-align:center}
-#full h3{font-family:Bodoni,serif;font-weight:700;font-size:var(--s3);margin:0;line-height:1.15}
-#full p{margin:6px 0 0;color:var(--soft);font-size:var(--s1)}
+#full h3{font-family:News,Georgia,serif;font-weight:500;font-size:var(--s3);margin:0;line-height:1.2}
+#full p{margin:6px 0 0;color:var(--soft)}
 #f-prog{align-self:stretch;margin-top:20px}
 #f-range{-webkit-appearance:none;appearance:none;width:100%;height:32px;background:transparent;margin:0}
-#f-range::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--verde) var(--p,0%),var(--line) var(--p,0%))}
-#f-range::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--verde);margin-top:-8px;border:3px solid var(--marmo)}
-#full .times{display:flex;justify-content:space-between;font-size:16px;color:var(--soft);font-variant-numeric:tabular-nums}
-#full .ctl{display:flex;align-items:center;justify-content:center;gap:30px;margin:18px 0 20px}
-#full .ctl button{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink)}
+#f-range::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--verde) var(--p,0%),var(--surface2) var(--p,0%))}
+#f-range::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--ink);margin-top:-8px}
+#full .times{display:flex;justify-content:space-between;font-size:15px;color:var(--soft);font-variant-numeric:tabular-nums}
+#full .ctl{display:flex;align-items:center;justify-content:center;gap:28px;margin:18px 0 20px}
+#full .ctl button{width:70px;height:70px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:var(--ink)}
 #full .ctl button svg{fill:currentColor}
-#full .ctl .pp{width:96px;height:96px;background:var(--rosso);color:#fff;box-shadow:0 6px 0 var(--rosso-d)}
-#full .ctl button:active{opacity:.75}
+#full .ctl .pp{width:92px;height:92px;border-radius:24px;background:var(--rosso);color:#fff}
+#full .ctl button:active{background:var(--surface)}
+#full .ctl .pp:active{background:var(--rosso-d)}
 #full .ctl button:disabled{opacity:.3}
 #full .sleep{align-self:stretch;margin-top:auto;padding-top:8px}
 #full .sleep b{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:400;color:var(--soft);margin-bottom:10px}
-#full .seg{display:grid;grid-template-columns:repeat(4,1fr);border:2px solid var(--line);border-radius:999px;padding:3px}
-#full .seg button{border-radius:999px;padding:12px 0;font-weight:700;text-align:center;font-size:17px}
+#full .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+#full .seg button{border-radius:12px;padding:12px 0;font-weight:700;text-align:center;font-size:17px;color:var(--soft)}
 #full .seg button.on{background:var(--verde);color:#fff}
 #full .err{background:var(--rosso);color:#fff;padding:10px 14px;border-radius:12px;margin-bottom:12px;display:none;align-self:stretch;text-align:center}
-#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(104px + env(safe-area-inset-bottom));z-index:15;max-width:88%;background:var(--ink);color:var(--marmo);padding:12px 20px;border-radius:999px;font-size:17px;font-weight:700;text-align:center;transition:opacity .3s;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(100px + env(safe-area-inset-bottom));z-index:15;max-width:88%;background:var(--surface2);color:var(--ink);border:1px solid var(--line);padding:12px 20px;border-radius:14px;font-size:17px;font-weight:700;text-align:center;transition:opacity .3s;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
 <header id="top">
-  <button class="back" id="back" onclick="goBack()" aria-label="Volver"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <button class="back" id="back" onclick="goBack()" aria-label="Volver"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
   <h1 id="title">Musica di Adorizia</h1>
 </header>
 <main>
   <!-- INICIO -->
   <section class="view on" id="v-home">
-    <h1 class="hello" id="hello-txt">Ciao, Adorizia</h1>
-    <p class="count" id="hero-count">Musica italiana di sempre</p>
-
-    <div class="deck">
-      <button class="vinyl" id="home-vinyl" onclick="vinylTap()" aria-label="Poner o pausar la música">
-        <span class="label"><b>Adorizia</b><i>45 giri</i></span>
-      </button>
-      <p class="now" id="home-now"></p>
+    <div class="home-top">
+      <span class="mark" aria-hidden="true"><i style="background:#2EA06A"></i><i style="background:#F5F4EE"></i><i style="background:#D7333A"></i></span>
+      <h1 class="hello" id="hello-txt">Ciao, Adorizia</h1>
+      <p class="count" id="hero-count"></p>
     </div>
 
-    <button class="play-all" onclick="playTodos()"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5z"/></svg>Escuchar música italiana</button>
+    <div class="composer">
+      <button class="ask" onclick="show('search')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>¿Qué querés escuchar hoy?</button>
+      <button class="play-all" onclick="playTodos()"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5z"/></svg>Escuchar música italiana</button>
+    </div>
 
-    <h2>Eros, Laura y Bocelli</h2>
-    <div class="trio" id="trio"></div>
+    <div class="chips" id="trio"></div>
 
-    <h2>Más música</h2>
-    <nav class="menu">
-      <button class="big" onclick="show('artists')"><span class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><rect x="8.5" y="2.5" width="7" height="12" rx="3.5"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg></span><span>Cantantes<small id="artists-count">Elegí un cantante</small></span><span class="chev">›</span></button>
-      <button class="big" onclick="show('search')"><span class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></span><span>Buscar<small>Un cantante o una canción</small></span><span class="chev">›</span></button>
-    </nav>
+    <button class="nowcard" id="nowcard" onclick="openFull()">
+      <span class="art" id="now-art"></span>
+      <span class="t"><small>Suena ahora</small><b id="now-title"></b><span id="now-artist"></span></span>
+    </button>
   </section>
 
   <!-- CANTANTES -->
   <section class="view" id="v-artists"><div class="grid" id="artist-grid"></div></section>
 
-  <!-- LOS DE MAMA (se mantiene por si se abre desde otro lado) -->
+  <!-- LOS DE MAMA -->
   <section class="view" id="v-fav"></section>
 
   <!-- BUSCAR -->
   <section class="view" id="v-search">
-    <form onsubmit="event.preventDefault();doSearch()"><input class="search" id="sq" type="search" enterkeyhint="search" placeholder="Ej: Con te partirò"></form>
+    <form onsubmit="event.preventDefault();doSearch()"><input class="search" id="sq" type="search" enterkeyhint="search" placeholder="Un cantante o una canción"></form>
     <button class="btn" onclick="doSearch()">Buscar</button>
     <div id="search-res"></div>
   </section>
@@ -223,18 +216,18 @@ h2{font-family:Bodoni,serif;font-weight:700;font-size:var(--s3);margin:34px 0 14
 
 <!-- mini reproductor -->
 <div id="bar" onclick="openFull(event)">
-  <div class="prog"><i id="bar-prog"></i></div>
   <div class="art" id="bar-art"></div>
   <div class="t"><b id="bar-title"></b><span id="bar-artist"></span></div>
   <button class="pp" id="bar-pp" onclick="event.stopPropagation();Android.cmd('toggle')" aria-label="Pausa"></button>
   <button class="nx" id="bar-nx" onclick="event.stopPropagation();Android.cmd('next')" aria-label="Siguiente"></button>
+  <div class="prog"><i id="bar-prog"></i></div>
 </div>
 
 <!-- reproductor grande -->
 <div id="full">
   <div id="f-bg"></div>
   <button class="close" onclick="closeFull()" aria-label="Cerrar"><span class="grab"></span></button>
-  <button class="vinyl" id="f-vinyl" onclick="Android.cmd('toggle')" aria-label="Pausa"><span class="label" id="f-art"></span></button>
+  <div class="cover" id="f-art"></div>
   <div class="info"><h3 id="f-title"></h3><p id="f-artist"></p></div>
   <div id="f-prog">
     <input type="range" id="f-range" min="0" max="1000" value="0" aria-label="Posición" oninput="this.style.setProperty('--p',this.value/10+'%')" onchange="Android.seek(Math.round(this.value/1000*S.dur))">
@@ -484,21 +477,24 @@ async function renderHome() {
   $('hello-txt').textContent = (h < 13 ? 'Buongiorno' : h < 20 ? 'Buon pomeriggio' : 'Buonasera') + ', Adorizia';
   await artistsReady;
   const n = allSongs().length;
-  if (n) $('hero-count').textContent = n.toLocaleString('es') + ' canciones de ' + ARTISTS.length + ' cantantes italianos';
-  $('artists-count').textContent = ARTISTS.length + ' cantantes, de Modugno a Il Volo';
+  if (n) $('hero-count').textContent = n.toLocaleString('es-AR') + ' canciones italianas de siempre';
   const t = $('trio'); t.innerHTML = '';
   ARTISTS.slice(0, 3).forEach(a => {
     const songs = (a.songs || []).map(s => ytItem(s, a.name));
-    const b = document.createElement('button');
     const short = a.name === 'Andrea Bocelli' ? 'Bocelli' : a.name.split(' ')[0];
-    b.innerHTML = (a.photo ? `<img src="${esc(a.photo)}" onerror="this.outerHTML='<div class=ph>🎤</div>'" alt="">` : '<div class="ph">🎤</div>') +
-      `<b>${esc(short)}</b><span>${songs.length} canciones</span>`;
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.innerHTML = (a.photo ? `<img src="${esc(a.photo)}" onerror="this.outerHTML='<span class=ph>🎤</span>'" alt="">` : '<span class="ph">🎤</span>') + esc(short);
     b.setAttribute('aria-label', 'Escuchar a ' + a.name);
     b.onclick = () => songs.length ? playQueue(shuffle(songs.slice()), 0) : openArtist(a);
     t.appendChild(b);
   });
+  const c = document.createElement('button');
+  c.className = 'chip';
+  c.innerHTML = '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><rect x="8.5" y="2.5" width="7" height="12" rx="3.5"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg></span>Cantantes';
+  c.onclick = () => show('artists');
+  t.appendChild(c);
 }
-function vinylTap() { if (S.idle) playTodos(); else Android.cmd('toggle'); }
 renderHome();
 async function loadAlbums(a) {
   if (a.albums && a.albums.length) return a.albums;
@@ -684,16 +680,14 @@ window.onPlayer = function (s) {
   if (!$('f-next').innerHTML) { $('f-next').innerHTML = IC.next; $('f-prev').innerHTML = IC.prev; $('bar-nx').innerHTML = IC.next.replace('width="34" height="34"', 'width="28" height="28" fill="currentColor"'); }
   $('full').classList.toggle('paused', !s.wants);
   $('bar-title').textContent = s.title; $('bar-artist').textContent = s.artist;
-  const spinning = s.playing || (s.buffering && s.wants);
-  ['home-vinyl', 'f-vinyl', 'bar-art'].forEach(id => $(id).classList.toggle("gira", !!spinning));
-  const nowKey = s.idle ? '' : s.title + '|' + s.artist;
-  if ($('home-now').dataset.k !== nowKey) { $('home-now').dataset.k = nowKey; $('home-now').innerHTML = s.idle ? '' : `<b>${esc(s.title)}</b><br>${esc(s.artist.split(' · ')[0])}`; }
+  $('nowcard').classList.toggle('show', !s.idle);
+  $('now-title').textContent = s.title; $('now-artist').textContent = s.artist.split(' · ')[0];
   $('f-title').textContent = s.title; $('f-artist').textContent = s.artist;
   const art = s.art && !s.art.startsWith('content:') ? s.art : '';
   if (art !== lastArt) {
     lastArt = art;
     $('bar-art').innerHTML = artHtml(art);
-    $('f-art').innerHTML = art ? `<img src="${esc(art)}" onerror="this.remove()" alt="">` : '<b>Adorizia</b><i>45 giri</i>';
+    $('f-art').innerHTML = artHtml(art); $('now-art').innerHTML = artHtml(art);
   }
   $('f-next').disabled = !s.hasNext;
   $('bar-nx').style.opacity = s.hasNext ? 1 : .3;

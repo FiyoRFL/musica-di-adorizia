@@ -49,16 +49,11 @@ class MainActivity : Activity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // mismos colores que la pantalla (marmol / verde oscuro de noche): sin destellos al abrir
-        val night = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-            android.content.res.Configuration.UI_MODE_NIGHT_YES
-        val bg = Color.parseColor(if (night) "#0F2A21" else "#EFEEEA")
+        // tema oscuro estilo Claude: barras del celu del mismo color que la app (sin destellos al abrir)
+        val bg = Color.parseColor("#262624")
         window.statusBarColor = bg
         window.navigationBarColor = bg
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(bg))
-        if (!night) window.decorView.systemUiVisibility =
-            android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or
-            (if (Build.VERSION.SDK_INT >= 26) android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR else 0)
         val loader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
             .build()
