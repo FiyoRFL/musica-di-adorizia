@@ -40,8 +40,11 @@ class PlayerService : MediaSessionService() {
             .setConnectTimeoutMs(15000)
             .setReadTimeoutMs(20000)
         val resolving = ResolvingDataSource.Factory(DefaultDataSource.Factory(this, http)) { spec: DataSpec ->
-            if (spec.uri.scheme == "yt") {
-                val st = YouTube.resolve(this, spec.uri.host ?: "")
+            val scheme = spec.uri.scheme
+            if (scheme == "yt" || scheme == "yts") {
+                // yt://ID = video conocido; yts://s?q=cantante+titulo = se busca en YouTube
+                val id = if (scheme == "yt") spec.uri.host ?: "" else YouTube.search(this, spec.uri.getQueryParameter("q") ?: "")
+                val st = YouTube.resolve(this, id)
                 spec.buildUpon()
                     .setUri(Uri.parse(st.url))
                     .setHttpRequestHeaders(mapOf("User-Agent" to st.ua))
@@ -94,8 +97,15 @@ class PlayerService : MediaSessionService() {
         val i = p.currentMediaItemIndex
         val ids = (1..2).mapNotNull { k ->
             if (i + k < p.mediaItemCount) p.getMediaItemAt(i + k).localConfiguration?.uri else null
-        }.filter { it.scheme == "yt" }.mapNotNull { it.host }
-        ids.forEach { id -> prefetchPool.execute { try { YouTube.resolve(this, id) } catch (_: Throwable) { } } }
+        }.filter { it.scheme == "yt" || it.scheme == "yts" }
+        ids.forEach { u ->
+            prefetchPool.execute {
+                try {
+                    val id = if (u.scheme == "yt") u.host ?: return@execute else YouTube.search(this, u.getQueryParameter("q") ?: return@execute)
+                    YouTube.resolve(this, id)
+                } catch (_: Throwable) { }
+            }
+        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session

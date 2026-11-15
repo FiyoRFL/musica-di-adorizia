@@ -70,3 +70,15 @@ def resolve(vid):
         except Exception as e:
             last = str(e).strip().splitlines()[-1] if str(e).strip() else repr(e)
     raise RuntimeError(last[:200] or "no se pudo")
+
+
+def search(query):
+    """Busca en YouTube y devuelve el id del primer video."""
+    opts = {"quiet": True, "no_warnings": True, "extract_flat": True, "skip_download": True, "socket_timeout": 20}
+    with _ydl.YoutubeDL(opts) as y:
+        info = y.extract_info("ytsearch3:" + query, download=False)
+    for e in (info or {}).get("entries") or []:
+        d = e.get("duration") or 0
+        if e.get("id") and (not d or 60 <= d <= 540):
+            return e["id"]
+    raise RuntimeError("sin resultados")

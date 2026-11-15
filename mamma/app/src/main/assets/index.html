@@ -344,8 +344,17 @@ const artistsReady = fetch('artists.json').then(r => r.json()).then(d => {
   // sin canciones repetidas por cantante
   ARTISTS.forEach(a => {
     const seen = new Set();
-    // el titulo limpio se calcula UNA vez y queda guardado (s.ct)
-    a.songs = (a.songs || []).filter(s => { if (NOSONG.test(s.t)) return false; s.ct = songTitle(s.t, a.name); const k = norm(s.ct); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+    const byId = {};
+    (a.albums || []).forEach(al => { byId[al.id] = al; });
+    // titulo limpio calculado UNA vez (s.ct). Las listas de Discogs ya vienen limpias (tienen "m")
+    a.songs = (a.songs || []).filter(s => {
+      if (NOSONG.test(s.t)) return false;
+      s.ct = s.m && !s.al ? tidy(s.t) : songTitle(s.t, a.name);
+      const k = norm(s.ct); if (!k || seen.has(k)) return false; seen.add(k);
+      const al = s.m && byId[s.m];
+      if (al) { s.al = s.al || al.title; s.yr = s.yr || al.year; s.cv = al.cover || ''; }
+      return true;
+    });
   });
 }).catch(() => {});
 async function renderArtists() {
@@ -402,8 +411,15 @@ function songTitle(t, artist) {
   x = x.replace(/\s{2,}/g, ' ').replace(/^["'“”«»\s.,\-–—:]+|["'“”«»\s.,\-–—:]+$/g, '').trim();
   return x.length > 1 ? x : orig;
 }
+function songUrl(s, artist, title) {
+  return s.y ? 'yt://' + s.y : 'yts://s?q=' + encodeURIComponent(artist.replace(/ & .*/, '') + ' ' + title);
+}
+function songArt(s, big) {
+  return s.y ? 'https://i.ytimg.com/vi/' + s.y + (big ? '/hqdefault.jpg' : '/mqdefault.jpg') : (s.cv || '');
+}
 function ytItem(s, artist) {
-  return { url: 'yt://' + s.y, title: s.ct || songTitle(s.t, artist), artist: artist + (s.yr ? ' · ' + s.yr : ''), art: 'https://i.ytimg.com/vi/' + s.y + '/hqdefault.jpg' };
+  const title = s.ct || songTitle(s.t, artist);
+  return { url: songUrl(s, artist, title), title, artist: artist + (s.yr ? ' · ' + s.yr : ''), art: songArt(s, true) };
 }
 function videosOf(m, artist, al) {
   const out = []; const seen = new Set();
@@ -418,7 +434,7 @@ function videosOf(m, artist, al) {
 function songRow(s, artist, queue, i) {
   const b = document.createElement('button');
   b.className = 'row';
-  b.innerHTML = rowHtml('https://i.ytimg.com/vi/' + s.y + '/mqdefault.jpg', IC.note, s.ct || songTitle(s.t, artist), (s.al ? s.al + ' · ' : '') + (s.yr || artist || ''));
+  b.innerHTML = rowHtml(songArt(s), IC.note, s.ct || songTitle(s.t, artist), (s.al ? s.al + ' · ' : '') + (s.yr || artist || ''));
   b.onclick = () => playQueue(queue, i);
   return b;
 }
@@ -570,23 +586,24 @@ async function openAlbum(artist, al) {
   try { m = await discogs((al.release ? '/releases/' : '/masters/') + al.id); }
   catch (e) { $('al-tracks').innerHTML = '<div class="msg">No se pudo cargar de Discogs. Probá en un ratito.</div>'; return; }
   if (cur !== 'album') return;
-  const songs = videosOf(m, artist, al);
+  // todas las canciones del disco; las que tienen video en Discogs van directo, el resto se busca en YouTube
+  const vids = videosOf(m, artist, al).map(v => ({ ...v, k: norm(v.t) }));
+  const tl = (m.tracklist || []).filter(t => (t.type_ || 'track') === 'track' && t.title);
+  let songs = tl.map(t => {
+    const k = norm(t.title);
+    const v = vids.find(v => v.k === k || (k.length > 4 && (v.k.includes(k) || (v.k.length > 4 && k.includes(v.k)))));
+    return { t: t.title, ct: tidy(t.title), y: v ? v.y : undefined, al: al.title, yr: al.year || m.year, cv: al.cover || '' };
+  });
+  if (!songs.length) songs = vids;   // sin lista: los videos
   const q = songs.map(s => ytItem(s, artist));
   const box = $('al-tracks'); box.innerHTML = '';
   if (q.length) {
-    $('al-play').innerHTML = `<button class="btn red">${IC.play.replace('<svg ', '<svg fill="#fff" ')} Escuchar el disco (${q.length})</button>`;
+    $('al-play').innerHTML = `<button class="btn red">${IC.play.replace('<svg ', '<svg fill="#fff" ')} Escuchar el disco (${q.length} canciones)</button>`;
     $('al-play').firstChild.onclick = () => playQueue(q, 0);
     const ls = $('al-songs'); ls.style.display = 'block';
     songs.forEach((s, i) => ls.appendChild(songRow(s, artist, q, i)));
   } else {
-    box.innerHTML = '<div class="note">Discogs no tiene canciones para escuchar de este disco. Probá con otro.</div>';
-  }
-  const tl = (m.tracklist || []).filter(t => t.type_ === 'track');
-  if (tl.length) {
-    const h = document.createElement('h2'); h.textContent = 'Lista de canciones'; box.appendChild(h);
-    const d = document.createElement('div'); d.className = 'note';
-    d.innerHTML = tl.map((t, i) => `${i + 1}. ${esc(t.title)}${t.duration ? ' <span style="color:#9b8a7e">(' + esc(t.duration) + ')</span>' : ''}`).join('<br>');
-    box.appendChild(d);
+    box.innerHTML = '<div class="note">Discogs no tiene la lista de canciones de este disco. Probá con otro.</div>';
   }
 }
 

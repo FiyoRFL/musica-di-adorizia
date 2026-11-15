@@ -56,6 +56,52 @@ object YouTube {
         }
     }
 
+    private val found = ConcurrentHashMap<String, String>()   // busqueda -> id de video
+
+    /**
+     * Busca una cancion en YouTube ("cantante titulo") y devuelve el id del primer video.
+     * Primero el pedido directo (como la web de YouTube); si falla, yt-dlp ("ytsearch1:").
+     */
+    fun search(ctx: Context, query: String): String {
+        found[query]?.let { return it }
+        val id = try { searchDirect(query) } catch (_: Exception) { null }
+            ?: try {
+                python(ctx).callAttr("search", query).toString().takeIf { Regex("^[\\w-]{11}$").matches(it) }
+            } catch (_: Throwable) { null }
+            ?: throw Unavailable("no encontrada: $query")
+        found[query] = id
+        return id
+    }
+
+    private fun searchDirect(query: String): String? {
+        val body = JSONObject()
+            .put("context", JSONObject().put("client", JSONObject()
+                .put("clientName", "WEB").put("clientVersion", "2.20250312.04.00").put("hl", "it").put("gl", "IT")))
+            .put("query", query)
+            .put("params", "EgIQAQ==") // solo videos
+        val c = URL("https://www.youtube.com/youtubei/v1/search?prettyPrint=false").openConnection() as HttpURLConnection
+        c.requestMethod = "POST"
+        c.doOutput = true
+        c.connectTimeout = 10000
+        c.readTimeout = 12000
+        c.setRequestProperty("Content-Type", "application/json")
+        c.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36")
+        c.outputStream.use { it.write(body.toString().toByteArray()) }
+        val txt = c.inputStream.bufferedReader().use { it.readText() }
+        c.disconnect()
+        // el primer "videoRenderer" con duracion de cancion (1 a 9 minutos)
+        val re = Regex("\"videoRenderer\":\\{\"videoId\":\"([\\w-]{11})\"")
+        val ids = re.findAll(txt).map { it.groupValues[1] }.toList()
+        if (ids.isEmpty()) return null
+        val lens = Regex("\"lengthText\":\\{.{0,300}?\"simpleText\":\"(\\d+):(\\d\\d)\"").findAll(txt)
+            .map { it.groupValues[1].toInt() * 60 + it.groupValues[2].toInt() }.toList()
+        for ((i, id) in ids.withIndex()) {
+            val sec = lens.getOrNull(i) ?: return id
+            if (sec in 60..540) return id
+        }
+        return ids.first()
+    }
+
     fun resolve(ctx: Context, id: String): Stream {
         cache[id]?.let { if (it.expires > System.currentTimeMillis()) return it }
         var why = ""

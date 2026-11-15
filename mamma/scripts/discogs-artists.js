@@ -39,7 +39,7 @@ const KNOWN = {
   'Mia Martini': 556869, 'Vasco Rossi': 130185, 'Enrico Ruggeri': 503126, 'Paolo Conte': 273695,
   'Marcella Bella': 503123, 'Fabrizio De André': 660740,
 };
-const ALBUMS_WITH_SONGS = 14;   // discos por cantante de donde se sacan canciones
+const ALBUMS_WITH_SONGS = 14;   // discos por cantante de donde se sacan TODAS sus canciones
 const SONGS_PER_ALBUM = 5;
 
 const KEY = (process.env.DISCOGS_KEY || '').trim();
@@ -117,26 +117,44 @@ function cleanTitle(t, artist) {
   return s.replace(/\s{2,}/g, ' ').trim();
 }
 
+// Canciones de un cantante: la LISTA COMPLETA de sus discos mas populares.
+// Si Discogs tiene el video de esa cancion se guarda su ID de YouTube (y); si no,
+// la app la busca en YouTube por "cantante + titulo" al momento de tocarla.
+// Formato compacto: { t: titulo, y?: id de YouTube, m: id del disco }
+const SKIP_TRACK = /^(intro|outro|interludio|interlude|medley|intervista|interview|bonus|reprise|instrumental|strumentale|base)\b/i;
+function durSec(d) { const m = /^(\d+):(\d\d)$/.exec(d || ''); return m ? +m[1] * 60 + +m[2] : 0; }
 async function songsOf(name, list) {
   const songs = [];
   const seen = new Set();
-  // los discos mas populares (o, si no hay datos, repartidos en toda la carrera)
   let pick = list.slice();
   if (pick.some(a => a.pop)) pick.sort((x, y) => y.pop - x.pop);
   else { const st = Math.max(1, Math.floor(pick.length / ALBUMS_WITH_SONGS)); pick = pick.filter((_, i) => i % st === 0); }
   for (const al of pick.slice(0, ALBUMS_WITH_SONGS)) {
     try {
       const m = await get(`https://api.discogs.com/masters/${al.id}`);
-      let n = 0;
+      const vids = [];
       for (const v of m.videos || []) {
         const id = ytId(v.uri);
-        if (!id || BAD.test(v.title || '') || (v.duration && (v.duration < 100 || v.duration > 480))) continue;
-        const title = cleanTitle(v.title, name);
-        const k = norm(title);
-        if (!k || seen.has(k) || seen.has(id)) continue;
-        seen.add(k); seen.add(id);
-        songs.push({ y: id, t: title, al: al.title, yr: al.year });
-        if (++n >= SONGS_PER_ALBUM) break;
+        if (!id || BAD.test(v.title || '') || (v.duration && (v.duration < 90 || v.duration > 600))) continue;
+        vids.push({ id, k: norm(cleanTitle(v.title, name)) });
+      }
+      const tracks = (m.tracklist || []).filter(t => (t.type_ || 'track') === 'track' && t.title && !SKIP_TRACK.test(t.title) && durSec(t.duration) <= 540);
+      if (tracks.length) {
+        for (const t of tracks) {
+          const title = t.title.replace(/\s{2,}/g, ' ').trim();
+          const k = norm(title);
+          if (!k || seen.has(k)) continue;
+          seen.add(k);
+          const v = vids.find(v => v.k === k || (k.length > 4 && (v.k.includes(k) || (v.k.length > 4 && k.includes(v.k)))));
+          songs.push(v ? { t: title, y: v.id, m: al.id } : { t: title, m: al.id });
+        }
+      } else {
+        // disco sin lista de canciones: se usan sus videos
+        for (const v of vids.slice(0, SONGS_PER_ALBUM)) {
+          if (!v.k || seen.has(v.k)) continue;
+          seen.add(v.k);
+          songs.push({ t: cleanTitle((m.videos.find(x => ytId(x.uri) === v.id) || {}).title, name), y: v.id, m: al.id });
+        }
       }
       if (!al.cover && m.images && m.images[0]) al.cover = m.images[0].uri150 || '';
     } catch (e) { console.warn('  master', al.id, e.message); }
