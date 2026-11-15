@@ -328,7 +328,7 @@ const artistsReady = fetch('artists.json').then(r => r.json()).then(d => {
   // sin canciones repetidas por cantante
   ARTISTS.forEach(a => {
     const seen = new Set();
-    a.songs = (a.songs || []).filter(s => { const k = norm(songTitle(s.t, a.name)); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+    a.songs = (a.songs || []).filter(s => { if (NOSONG.test(s.t)) return false; const k = norm(songTitle(s.t, a.name)); if (!k || seen.has(k)) return false; seen.add(k); return true; });
   });
 }).catch(() => {});
 async function renderArtists() {
@@ -359,15 +359,31 @@ function cleanTitle(t, artist) {
 }
 const tidy = t => String(t || '').replace(/\[[^\]]*\]/g, '').replace(/\((19|20)\d\d\)/g, '').replace(/\s{2,}/g, ' ').replace(/^[\s\-–—:]+|[\s\-–—:]+$/g, '').trim() || String(t || '');
 // saca el nombre del cantante pegado al titulo ("Io Amo - Fausto Leali", "Fausto Leali: Io Amo")
+// videos que no son una cancion (discos enteros, entrevistas, promos)
+const NOSONG = /vinile|complete album|album complet|cd complet|disco complet|\bcompleto\b|vinyl|\blp\b|\bepk\b|best of|il meglio|greatest hits|full album|raccolta|grandi successi|medley|intervist|interview|speciale|documentar|backstage|making of|trailer/i;
 function songTitle(t, artist) {
-  let x = tidy(t);
+  const orig = tidy(t);
+  let x = orig
+    .replace(/[♫♪~|•►▶★]+/g, ' - ')
+    .replace(/^\s*\d{1,2}\s*[.)\-]\s*/, '')
+    .replace(/\s*[(\[][^)\]]*\b(testo|lyrics?|letra|subtit\w*|sottotit\w*|c\.c\.)[^)\]]*[)\]]/gi, '')
+    .replace(/\s*\+?\s*\b(con\s+|with\s+)?(testo|lyrics?|letra|subtitulad\w*|sottotitol\w*)\b.*$/i, '')
+    .replace(/\s*\((?=[^)]*(\d{4}|live|discoring|rai\b|tv|show|sanremo|remaster|mix|version|versione|cd\s*\d|track|titoli|official|video|audio|hd|italiano|italian|originale))[^)]*\)/gi, '')
+    .replace(/\s*\b(movie\s+)?(official\s+)?(video\s*clip|videoclip|video|audio)(\s*(ufficiale|oficial|&\s*audio|restored|hd))*\s*(restored|hd)?\s*$/i, '')
+    .replace(/\s*\bhd\b\s*$/i, '');
+  x = x.replace(/\s+(19|20)\d\d\s*$/, '');
   const first = norm(artist).split(' ')[0];
-  const parts = x.split(/\s[-–—]\s|:\s/);
-  if (parts.length > 1 && first.length > 2) {
-    const keep = parts.filter(p => !norm(p).includes(first));
-    if (keep.length && keep.length < parts.length) x = keep.join(' - ');
+  if (first.length > 2 && norm(x).includes(first)) {
+    const q =x.match(/["“«]([^"”»]{2,})["”»]|''([^']{2,})''/);
+    if (q) x = q[1] || q[2];
+    else {
+      const parts = x.split(/\s*[,]\s*|\.\s+|\s[-–—]\s|:\s|\s[-–—]|[-–—]\s/).map(p => p.trim()).filter(Boolean);
+      const keep = parts.filter(p => !norm(p).includes(first) && !/collection|greatest|best of|album|raccolta/i.test(p));
+      if (keep.length) x = keep[0];
+    }
   }
-  return x.replace(/\s*\((official|video|audio|lyric|testo|live)[^)]*\)/gi, '').trim() || tidy(t);
+  x = x.replace(/\s{2,}/g, ' ').replace(/^["'“”«»\s.,\-–—:]+|["'“”«»\s.,\-–—:]+$/g, '').trim();
+  return x.length > 1 ? x : orig;
 }
 function ytItem(s, artist) {
   return { url: 'yt://' + s.y, title: songTitle(s.t, artist), artist: artist + (s.yr ? ' · ' + s.yr : ''), art: 'https://i.ytimg.com/vi/' + s.y + '/hqdefault.jpg' };
