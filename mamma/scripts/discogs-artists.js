@@ -52,7 +52,20 @@ const assets = path.join(__dirname, '..', 'app', 'src', 'main', 'assets');
 fs.writeFileSync(path.join(assets, 'keys.js'),
   'window.DGK = ' + JSON.stringify(KEY) + ';\nwindow.DGS = ' + JSON.stringify(SECRET) + ';\n');
 
+// Cache en disco: lo que ya se bajo de Discogs no se vuelve a pedir (rearmar el catalogo tarda segundos)
+const CACHE = path.join(__dirname, '.discogs-cache');
+fs.mkdirSync(CACHE, { recursive: true });
+const ckey = u => path.join(CACHE, u.replace(/^https:\/\/api\.discogs\.com\//, '').replace(/[^\w.-]+/g, '_').slice(0, 180) + '.json');
+
 async function get(url) {
+  const cf = ckey(url);
+  if (fs.existsSync(cf) && Date.now() - fs.statSync(cf).mtimeMs < 30 * 86400000) return JSON.parse(fs.readFileSync(cf, 'utf8'));
+  const d = await getNet(url);
+  try { fs.writeFileSync(cf, JSON.stringify(d)); } catch (e) {}
+  return d;
+}
+
+async function getNet(url) {
   const auth = KEY ? (url.includes('?') ? '&' : '?') + `key=${KEY}&secret=${SECRET}` : '';
   for (let i = 0; i < 5; i++) {
     const r = await fetch(url + auth, { headers: { 'User-Agent': UA } });
