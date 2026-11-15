@@ -49,12 +49,21 @@ class MainActivity : Activity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = Color.parseColor("#7A1F2B")
+        // mismos colores que la pantalla (marmol / verde oscuro de noche): sin destellos al abrir
+        val night = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val bg = Color.parseColor(if (night) "#0F2A21" else "#EFEEEA")
+        window.statusBarColor = bg
+        window.navigationBarColor = bg
+        window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(bg))
+        if (!night) window.decorView.systemUiVisibility =
+            android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or
+            (if (Build.VERSION.SDK_INT >= 26) android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR else 0)
         val loader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
             .build()
         web = WebView(this)
-        web.setBackgroundColor(Color.parseColor("#FBF6EE"))
+        web.setBackgroundColor(bg)
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
         web.settings.textZoom = 100
@@ -89,11 +98,16 @@ class MainActivity : Activity() {
                 pushState()
             } catch (_: Exception) { }
         }, MoreExecutors.directExecutor())
+        web.onResume()
+        web.resumeTimers()
         main.post(ticker)
     }
 
     override fun onStop() {
         main.removeCallbacks(ticker)
+        // con la pantalla apagada la pantalla de la app duerme (la musica sigue en el servicio)
+        web.onPause()
+        web.pauseTimers()
         controllerFuture?.let { MediaController.releaseFuture(it) }
         controller = null
         super.onStop()

@@ -31,9 +31,17 @@ object YouTube {
     @Volatile private var py: PyObject? = null
     private val pyLock = Any()
 
-    /** Arranca Python y yt-dlp de fondo (tarda unos segundos la primera vez). */
+    /**
+     * Prepara yt-dlp (el respaldo) sin molestar: espera 20 s y corre en prioridad baja,
+     * asi no le quita procesador a la primera cancion en celus de gama media (Samsung A23/A33).
+     * Si el motor directo falla antes, python() lo arranca en el momento.
+     */
     fun warmUp(ctx: Context) {
-        Thread { try { python(ctx) } catch (_: Throwable) { } }.start()
+        val app = ctx.applicationContext
+        Thread {
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
+            try { Thread.sleep(20_000); python(app) } catch (_: Throwable) { }
+        }.start()
     }
 
     private fun python(ctx: Context): PyObject = synchronized(pyLock) {

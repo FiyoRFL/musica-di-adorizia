@@ -63,6 +63,7 @@ header.show + main{padding-top:16px}
 .vinyl .label i{font-style:normal;font-size:12px;letter-spacing:.04em;opacity:.85}
 .vinyl .label img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .vinyl::after{content:"";position:absolute;left:50%;top:50%;width:3.2%;height:3.2%;margin:-1.6% 0 0 -1.6%;border-radius:50%;background:var(--marmo);box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+.vinyl.gira,#bar .art.gira{will-change:transform}
 .vinyl.gira{animation:giro 1.333s linear infinite}   /* 45 vueltas por minuto */
 @keyframes giro{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion: reduce){.vinyl.gira{animation:none}}
@@ -350,7 +351,8 @@ const artistsReady = fetch('artists.json').then(r => r.json()).then(d => {
   // sin canciones repetidas por cantante
   ARTISTS.forEach(a => {
     const seen = new Set();
-    a.songs = (a.songs || []).filter(s => { if (NOSONG.test(s.t)) return false; const k = norm(songTitle(s.t, a.name)); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+    // el titulo limpio se calcula UNA vez y queda guardado (s.ct)
+    a.songs = (a.songs || []).filter(s => { if (NOSONG.test(s.t)) return false; s.ct = songTitle(s.t, a.name); const k = norm(s.ct); if (!k || seen.has(k)) return false; seen.add(k); return true; });
   });
 }).catch(() => {});
 async function renderArtists() {
@@ -408,7 +410,7 @@ function songTitle(t, artist) {
   return x.length > 1 ? x : orig;
 }
 function ytItem(s, artist) {
-  return { url: 'yt://' + s.y, title: songTitle(s.t, artist), artist: artist + (s.yr ? ' · ' + s.yr : ''), art: 'https://i.ytimg.com/vi/' + s.y + '/hqdefault.jpg' };
+  return { url: 'yt://' + s.y, title: s.ct || songTitle(s.t, artist), artist: artist + (s.yr ? ' · ' + s.yr : ''), art: 'https://i.ytimg.com/vi/' + s.y + '/hqdefault.jpg' };
 }
 function videosOf(m, artist, al) {
   const out = []; const seen = new Set();
@@ -423,7 +425,7 @@ function videosOf(m, artist, al) {
 function songRow(s, artist, queue, i) {
   const b = document.createElement('button');
   b.className = 'row';
-  b.innerHTML = rowHtml('https://i.ytimg.com/vi/' + s.y + '/mqdefault.jpg', IC.note, songTitle(s.t, artist), (s.al ? s.al + ' · ' : '') + (s.yr || artist || ''));
+  b.innerHTML = rowHtml('https://i.ytimg.com/vi/' + s.y + '/mqdefault.jpg', IC.note, s.ct || songTitle(s.t, artist), (s.al ? s.al + ' · ' : '') + (s.yr || artist || ''));
   b.onclick = () => playQueue(queue, i);
   return b;
 }
@@ -684,7 +686,8 @@ window.onPlayer = function (s) {
   $('bar-title').textContent = s.title; $('bar-artist').textContent = s.artist;
   const spinning = s.playing || (s.buffering && s.wants);
   ['home-vinyl', 'f-vinyl', 'bar-art'].forEach(id => $(id).classList.toggle("gira", !!spinning));
-  $('home-now').innerHTML = s.idle ? '' : `<b>${esc(s.title)}</b><br>${esc(s.artist.split(' · ')[0])}`;
+  const nowKey = s.idle ? '' : s.title + '|' + s.artist;
+  if ($('home-now').dataset.k !== nowKey) { $('home-now').dataset.k = nowKey; $('home-now').innerHTML = s.idle ? '' : `<b>${esc(s.title)}</b><br>${esc(s.artist.split(' · ')[0])}`; }
   $('f-title').textContent = s.title; $('f-artist').textContent = s.artist;
   const art = s.art && !s.art.startsWith('content:') ? s.art : '';
   if (art !== lastArt) {
