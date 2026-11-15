@@ -12,7 +12,7 @@ android {
         targetSdk = 34
         versionCode = (System.getenv("MAMMA_CODE") ?: "1").toInt()
         versionName = System.getenv("MAMMA_VERSION") ?: "1.0.0"
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+        ndk { abiFilters += listOf("arm64-v8a") } // celus de 64 bits (Samsung A23 y casi todos los actuales)
     }
     // Llave fija: cada version nueva se instala ENCIMA de la anterior
     signingConfigs {
