@@ -2,12 +2,12 @@ MUSICA DE MAMA - app Android de musica italiana de todos los tiempos
 =====================================================================
 - "Musica italiana de todos los tiempos": un toque y suena sin parar (48 cantantes, de Modugno a Il Volo).
 - "Eros - Laura - Bocelli": sus canciones, mezcladas.
-- Cantantes, discos y BUSCAR: Discogs con las claves de FIYODIGGER (secretos DISCOGS_KEY / DISCOGS_SECRET).
+- Cantantes, discos y BUSCAR: Discogs con las claves de FIYODIGGER (secretos DISCOGS_KEY / DISCOGS_SECRET: cargarlos en Settings -> Secrets -> Actions de este repo).
 - El audio sale de YouTube con el motor de FIYODIGGER (motor directo + yt-dlp de respaldo):
   suena con la pantalla apagada, con controles en la pantalla de bloqueo y sin anuncios.
   Si un video esta bloqueado o borrado, pasa solo al siguiente.
 - Apagado automatico (15 / 30 / 60 min).
 
-COMPILAR: se compila sola al subir cambios en mamma/ (o Actions -> "Musica de Mama APK" -> Run workflow).
+COMPILAR: Actions -> "Musica de Mama APK" -> Run workflow.
 La APK queda en Releases (mamma-v1.0.N). Tarda unos 15 minutos (arma el catalogo desde Discogs).
 mamma.jks es la llave: no la borres (sirve para instalar versiones nuevas encima).

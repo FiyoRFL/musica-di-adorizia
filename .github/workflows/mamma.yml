@@ -1,5 +1,5 @@
 # Musica de Mama: compila la APK y la deja en Releases (tag mamma-vX.Y.Z)
-# Solo a mano (Actions -> "Musica de Mama APK" -> Run workflow) para no gastar minutos de FIYODIGGER.
+# Solo a mano (Actions -> "Musica de Mama APK" -> Run workflow).
 name: Musica de Mama APK
 on:
   workflow_dispatch:
@@ -26,7 +26,7 @@ jobs:
           gradle-version: 8.7
       - name: Cantantes y discos de Discogs
         continue-on-error: true
-        run: node mamma/scripts/discogs-artists.js
+        run: node scripts/discogs-artists.js
         env:
           DISCOGS_KEY: ${{ secrets.DISCOGS_KEY }}
           DISCOGS_SECRET: ${{ secrets.DISCOGS_SECRET }}
@@ -35,10 +35,9 @@ jobs:
           echo "MAMMA_CODE=${{ github.run_number }}" >> $GITHUB_ENV
           echo "MAMMA_VERSION=1.0.${{ github.run_number }}" >> $GITHUB_ENV
       - name: Compilar APK
-        working-directory: mamma
         run: gradle :app:assembleRelease --no-daemon --stacktrace
       - name: Nombrar APK
-        run: mkdir -p out && cp mamma/app/build/outputs/apk/release/*.apk "out/MusicaDeMama-${MAMMA_VERSION}.apk"
+        run: mkdir -p out && cp app/build/outputs/apk/release/*.apk "out/MusicaDeMama-${MAMMA_VERSION}.apk"
       - name: Publicar en Releases
         env:
           GH_TOKEN: ${{ github.token }}

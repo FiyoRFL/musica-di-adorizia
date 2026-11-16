@@ -1,0 +1,6 @@
+.gradle/
+build/
+app/build/
+local.properties
+scripts/.discogs-cache/
+out/
