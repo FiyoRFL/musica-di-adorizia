@@ -32,8 +32,8 @@ jobs:
           DISCOGS_SECRET: ${{ secrets.DISCOGS_SECRET }}
       - name: Version
         run: |
-          echo "MAMMA_CODE=${{ github.run_number }}" >> $GITHUB_ENV
-          echo "MAMMA_VERSION=1.0.${{ github.run_number }}" >> $GITHUB_ENV
+          echo "MAMMA_CODE=$((100 + ${{ github.run_number }}))" >> $GITHUB_ENV
+          echo "MAMMA_VERSION=1.1.${{ github.run_number }}" >> $GITHUB_ENV
       - name: Compilar APK
         run: gradle :app:assembleRelease --no-daemon --stacktrace
       - name: Nombrar APK

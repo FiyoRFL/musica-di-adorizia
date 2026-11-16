@@ -9,5 +9,5 @@ MUSICA DE MAMA - app Android de musica italiana de todos los tiempos
 - Apagado automatico (15 / 30 / 60 min).
 
 COMPILAR: Actions -> "Musica de Mama APK" -> Run workflow.
-La APK queda en Releases (mamma-v1.0.N). Tarda unos 15 minutos (arma el catalogo desde Discogs).
+La APK queda en Releases (mamma-v1.1.N). Tarda unos 15 minutos (arma el catalogo desde Discogs).
 mamma.jks es la llave: no la borres (sirve para instalar versiones nuevas encima).
